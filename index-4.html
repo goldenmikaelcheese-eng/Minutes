@@ -1,0 +1,865 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Minutes — Service Portal</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+
+/* ── Themes ── */
+[data-theme="dark"]{
+  --bg:#0d0d0f;--bg2:#141416;--bg3:#1a1a1e;--bg4:#222228;
+  --border:rgba(255,255,255,0.07);--border2:rgba(255,255,255,0.12);
+  --text:#f0efe8;--text2:#9b9a93;--text3:#5a5a55;
+  --shadow:rgba(0,0,0,0.4);--shadow2:rgba(0,0,0,0.6);
+}
+[data-theme="light"]{
+  --bg:#f5f5f0;--bg2:#ffffff;--bg3:#f0f0eb;--bg4:#e8e8e3;
+  --border:rgba(0,0,0,0.08);--border2:rgba(0,0,0,0.14);
+  --text:#1a1a1a;--text2:#6b6b65;--text3:#a0a09a;
+  --shadow:rgba(0,0,0,0.08);--shadow2:rgba(0,0,0,0.15);
+}
+:root{
+  --accent:#c8f169;--accent2:#a8d44a;
+  --danger:#ff5f57;--warn:#ffbc40;--info:#5eaeff;--success:#4ade80;
+  --wa:#25D366;
+  --sidebar-w:220px;--font:'DM Sans',sans-serif;--mono:'DM Mono',monospace;
+  --radius:10px;--radius-sm:6px;
+}
+html,body{height:100%;font-family:var(--font);background:var(--bg);color:var(--text);font-size:14px;-webkit-font-smoothing:antialiased;transition:background 0.2s,color 0.2s}
+.screen{display:none}.screen.active{display:flex}
+
+/* ── Login ── */
+#login-screen{min-height:100vh;align-items:center;justify-content:center;position:relative;overflow:hidden}
+.login-bg{position:absolute;inset:0;z-index:0}
+.login-grid{position:absolute;inset:0;background-image:linear-gradient(rgba(200,241,105,0.04) 1px,transparent 1px),linear-gradient(90deg,rgba(200,241,105,0.04) 1px,transparent 1px);background-size:48px 48px}
+.login-noise{position:absolute;inset:0;background:radial-gradient(ellipse 80% 60% at 50% 40%,rgba(200,241,105,0.08) 0%,transparent 70%)}
+.login-box{position:relative;z-index:1;background:var(--bg2);border:1px solid var(--border2);border-radius:16px;padding:2.5rem;width:100%;max-width:400px;box-shadow:0 24px 64px var(--shadow2)}
+.login-logo{display:flex;align-items:baseline;gap:6px;margin-bottom:6px}
+.logo-m{font-size:28px;font-weight:600;color:var(--accent);letter-spacing:-1px}
+.logo-text{font-size:24px;font-weight:500;letter-spacing:4px;color:var(--text)}
+.logo-badge{background:var(--accent);color:#0d0d0f;font-size:10px;font-weight:600;letter-spacing:1px;padding:2px 7px;border-radius:4px;margin-left:4px}
+.login-sub{color:var(--text2);font-size:13px;margin-bottom:1.5rem}
+.login-demo-hint{background:rgba(200,241,105,0.08);border:1px solid rgba(200,241,105,0.2);border-radius:8px;padding:10px 14px;font-size:12px;color:var(--accent2);margin-bottom:1.25rem;display:flex;align-items:center;gap:8px}
+.login-note{margin-top:1rem;font-size:12px;color:var(--text3);text-align:center}
+
+/* ── App Layout ── */
+#app-screen{min-height:100vh;width:100%}
+.sidebar{width:var(--sidebar-w);min-height:100vh;background:var(--bg2);border-right:1px solid var(--border);display:flex;flex-direction:column;padding:1.25rem 0.75rem;position:fixed;top:0;left:0;bottom:0;z-index:100;transition:transform 0.2s ease,background 0.2s}
+.sidebar-logo{display:flex;align-items:baseline;gap:4px;padding:0 0.5rem 1.5rem;border-bottom:1px solid var(--border);margin-bottom:1rem}
+.sidebar-logo .logo-m{font-size:20px}.sidebar-logo .logo-text{font-size:17px;letter-spacing:3px}
+.sidebar-nav{display:flex;flex-direction:column;gap:2px;flex:1}
+.nav-item{display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:var(--radius-sm);color:var(--text2);font-size:13.5px;cursor:pointer;text-decoration:none;transition:all 0.15s;border:none;background:none;width:100%;text-align:left}
+.nav-item svg{width:16px;height:16px;flex-shrink:0}
+.nav-item:hover{background:var(--bg3);color:var(--text)}
+.nav-item.active{background:var(--accent);color:#0d0d0f;font-weight:500}
+.nav-item.active svg{stroke:#0d0d0f}
+.nav-item.signout{color:var(--text3);margin-top:4px}
+.nav-item.signout:hover{color:var(--danger);background:rgba(255,95,87,0.08)}
+.sidebar-bottom{border-top:1px solid var(--border);padding-top:1rem}
+.user-pill{display:flex;align-items:center;gap:10px;padding:10px 12px;margin-bottom:4px}
+.user-avatar{width:30px;height:30px;border-radius:50%;background:var(--accent);color:#0d0d0f;font-size:12px;font-weight:600;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.user-name{font-size:13px;font-weight:500;color:var(--text)}.user-role{font-size:11px;color:var(--text3)}
+.main-content{margin-left:var(--sidebar-w);flex:1;display:flex;flex-direction:column;min-height:100vh}
+.topbar{display:flex;align-items:center;justify-content:space-between;padding:0.875rem 1.5rem;border-bottom:1px solid var(--border);background:var(--bg2);position:sticky;top:0;z-index:50;transition:background 0.2s}
+.topbar-left,.topbar-right{display:flex;align-items:center;gap:12px}
+.page-title{font-size:15px;font-weight:500;color:var(--text)}
+.menu-toggle{display:none;background:none;border:none;color:var(--text2);cursor:pointer;padding:4px}
+.menu-toggle svg{width:20px;height:20px}
+.branch-select{background:var(--bg3);border:1px solid var(--border2);color:var(--text);padding:6px 10px;border-radius:var(--radius-sm);font-size:13px;font-family:var(--font);cursor:pointer}
+.theme-toggle{background:var(--bg3);border:1px solid var(--border2);color:var(--text2);padding:6px 10px;border-radius:var(--radius-sm);cursor:pointer;font-size:18px;line-height:1;transition:all 0.15s}
+.theme-toggle:hover{color:var(--text);border-color:var(--accent)}
+.notif-btn{position:relative;cursor:pointer;padding:6px;color:var(--text2)}
+.notif-btn svg{width:20px;height:20px}
+.notif-dot{position:absolute;top:4px;right:4px;width:7px;height:7px;border-radius:50%;background:var(--danger);display:none}
+.notif-dot.show{display:block}
+.notif-panel{position:absolute;top:48px;right:0;width:300px;background:var(--bg2);border:1px solid var(--border2);border-radius:var(--radius);padding:1rem;z-index:200;box-shadow:0 8px 32px var(--shadow)}
+
+/* ── Views ── */
+.view{display:none;padding:1.5rem}.view.active{display:block}
+.stats-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:1.5rem}
+.stat-card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:1.1rem 1.25rem}
+.stat-label{font-size:11px;color:var(--text2);margin-bottom:8px;text-transform:uppercase;letter-spacing:0.06em}
+.stat-val{font-size:32px;font-weight:500;color:var(--text);font-family:var(--mono);line-height:1}
+.stat-val.danger{color:var(--danger)}
+.stat-sub{font-size:12px;color:var(--text3);margin-top:6px}
+.dash-grid{display:grid;grid-template-columns:1fr 340px;gap:16px}
+.card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:1.25rem}
+.card.full-width{grid-column:1/-1}
+.card-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem}
+.card-title{font-size:14px;font-weight:500;color:var(--text)}
+.job-list{display:flex;flex-direction:column;gap:6px}
+.job-list-item{display:flex;align-items:center;justify-content:space-between;padding:10px 12px;background:var(--bg3);border-radius:var(--radius-sm);cursor:pointer;transition:background 0.15s}
+.job-list-item:hover{background:var(--bg4)}
+.jli-left{display:flex;flex-direction:column;gap:3px}
+.jli-id{font-size:11px;color:var(--text3);font-family:var(--mono)}
+.jli-name{font-size:13px;font-weight:500;color:var(--text)}.jli-device{font-size:12px;color:var(--text2)}
+.cat-pill{display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:20px;font-size:11px;font-weight:500}
+.cat-phone{background:rgba(94,174,255,0.12);color:var(--info)}
+.cat-watch{background:rgba(255,188,64,0.12);color:var(--warn)}
+.cat-shoes{background:rgba(200,241,105,0.12);color:var(--accent)}
+.cat-bag{background:rgba(168,212,74,0.15);color:var(--accent2)}
+.cat-laptop{background:rgba(74,222,128,0.12);color:var(--success)}
+.cat-gaming{background:rgba(167,139,250,0.15);color:#a78bfa}
+.cat-key{background:rgba(251,191,36,0.12);color:#fbbf24}
+.cat-engraving{background:rgba(249,115,22,0.12);color:#fb923c}
+.cat-printing{background:rgba(236,72,153,0.1);color:#f472b6}
+.cat-alteration{background:rgba(20,184,166,0.12);color:#2dd4bf}
+.cat-other{background:rgba(255,255,255,0.06);color:var(--text2)}
+.status-chart{display:flex;flex-direction:column;gap:10px;padding:4px 0}
+.sc-row{display:flex;align-items:center;gap:12px}
+.sc-label{font-size:12px;color:var(--text2);width:90px;flex-shrink:0}
+.sc-bar-wrap{flex:1;height:7px;background:var(--bg4);border-radius:4px;overflow:hidden}
+.sc-bar{height:100%;border-radius:4px;transition:width 0.8s cubic-bezier(.4,0,.2,1)}
+.sc-count{font-size:12px;color:var(--text2);font-family:var(--mono);width:20px;text-align:right}
+
+/* overdue row highlight */
+tr.overdue td{background:rgba(255,95,87,0.04)}
+tr.overdue td:first-child{border-left:2px solid var(--danger)}
+
+.view-controls{display:flex;align-items:center;gap:12px;margin-bottom:1.25rem;flex-wrap:wrap}
+.search-wrap{position:relative;flex:1;min-width:200px}
+.search-icon{position:absolute;left:10px;top:50%;transform:translateY(-50%);width:15px;height:15px;color:var(--text3)}
+.search-wrap input{width:100%;padding:8px 12px 8px 34px;background:var(--bg2);border:1px solid var(--border2);border-radius:var(--radius-sm);color:var(--text);font-family:var(--font);font-size:13px}
+.search-wrap input:focus{outline:none;border-color:var(--accent)}
+.filter-tabs{display:flex;gap:4px;flex-wrap:wrap}
+.ftab{padding:6px 12px;border-radius:var(--radius-sm);border:1px solid var(--border);background:none;color:var(--text2);font-size:12px;cursor:pointer;transition:all 0.15s;font-family:var(--font)}
+.ftab:hover{background:var(--bg3);color:var(--text)}
+.ftab.active{background:var(--accent);color:#0d0d0f;border-color:var(--accent);font-weight:500}
+.table-wrap{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;overflow-x:auto}
+.data-table{width:100%;border-collapse:collapse;font-size:13px}
+.data-table th{padding:10px 14px;text-align:left;font-size:11px;font-weight:500;color:var(--text3);text-transform:uppercase;letter-spacing:0.05em;border-bottom:1px solid var(--border);background:var(--bg3);white-space:nowrap}
+.data-table td{padding:11px 14px;border-bottom:1px solid var(--border);color:var(--text);vertical-align:middle}
+.data-table tr:last-child td{border-bottom:none}
+.data-table tbody tr{cursor:pointer;transition:background 0.12s}
+.data-table tbody tr:hover{background:var(--bg3)}
+.mono{font-family:var(--mono)}
+.badge{display:inline-flex;align-items:center;gap:5px;padding:3px 9px;border-radius:20px;font-size:11px;font-weight:500;white-space:nowrap}
+.badge-received{background:rgba(94,174,255,0.12);color:var(--info)}
+.badge-in_progress{background:rgba(200,241,105,0.12);color:var(--accent)}
+.badge-ready{background:rgba(74,222,128,0.15);color:var(--success)}
+.badge-delivered{background:rgba(255,255,255,0.08);color:var(--text2)}
+.badge-paid{background:rgba(74,222,128,0.15);color:var(--success)}
+.badge-unpaid{background:rgba(255,95,87,0.12);color:var(--danger)}
+.badge-dot{width:5px;height:5px;border-radius:50%;background:currentColor}
+
+/* ── Form ── */
+.form-card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:1.75rem;max-width:960px}
+.form-section-title{font-size:11px;font-weight:500;text-transform:uppercase;letter-spacing:0.08em;color:var(--text3);margin-bottom:1rem;padding-bottom:8px;border-bottom:1px solid var(--border)}
+.form-row{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+.form-row-2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.form-group{display:flex;flex-direction:column;gap:6px}
+.form-group label{font-size:12px;color:var(--text2);font-weight:500}
+.req{color:var(--danger)}
+.form-group input,.form-group select,.form-group textarea{background:var(--bg3);border:1px solid var(--border2);border-radius:var(--radius-sm);color:var(--text);padding:9px 12px;font-size:13px;font-family:var(--font);transition:border-color 0.15s}
+.form-group input:focus,.form-group select:focus,.form-group textarea:focus{outline:none;border-color:var(--accent)}
+.form-group select option{background:var(--bg3)}
+.form-group textarea{resize:vertical;min-height:72px}
+.service-cat-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin-bottom:1.5rem}
+.service-cat-btn{display:flex;flex-direction:column;align-items:center;gap:6px;padding:12px 8px;border-radius:var(--radius-sm);border:1.5px solid var(--border);background:var(--bg3);cursor:pointer;transition:all 0.15s;font-family:var(--font);color:var(--text2);font-size:12px}
+.service-cat-btn:hover{border-color:var(--border2);color:var(--text)}
+.service-cat-btn.selected{border-color:var(--accent);background:rgba(200,241,105,0.07);color:var(--accent)}
+.service-cat-btn svg{width:22px;height:22px}
+.photo-upload-area{border:1.5px dashed var(--border2);border-radius:var(--radius);padding:2rem;text-align:center;color:var(--text2);cursor:pointer;transition:all 0.15s;margin-top:4px}
+.photo-upload-area:hover{border-color:var(--accent);background:rgba(200,241,105,0.03)}
+.photo-upload-area p{font-size:13px;margin-bottom:2px}
+.upload-sub{font-size:12px;color:var(--text3)!important}
+.photo-previews{display:flex;gap:10px;flex-wrap:wrap;margin-top:12px}
+.photo-preview-item{position:relative;width:80px;height:80px;border-radius:var(--radius-sm);overflow:hidden;border:1px solid var(--border2)}
+.photo-preview-item img{width:100%;height:100%;object-fit:cover}
+.rm-photo{position:absolute;top:2px;right:2px;background:rgba(0,0,0,0.7);color:white;border:none;border-radius:50%;width:18px;height:18px;font-size:12px;cursor:pointer;display:flex;align-items:center;justify-content:center}
+.form-actions{display:flex;justify-content:flex-end;gap:10px;margin-top:1.5rem;align-items:center}
+
+/* ── Analytics ── */
+.analytics-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.bar-chart-wrap{padding:8px 0}.bar-chart-wrap.tall{min-height:180px}
+.chart-bar-row{display:flex;align-items:center;gap:12px;margin-bottom:10px}
+.chart-bar-label{font-size:12px;color:var(--text2);width:150px;flex-shrink:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.chart-bar-track{flex:1;height:10px;background:var(--bg4);border-radius:5px;overflow:hidden}
+.chart-bar-fill{height:100%;background:var(--accent);border-radius:5px;transition:width 1s cubic-bezier(.4,0,.2,1)}
+.chart-bar-val{font-size:12px;color:var(--text2);font-family:var(--mono);min-width:70px;text-align:right}
+.branch-compare-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px;margin-top:4px}
+.branch-compare-card{background:var(--bg3);border-radius:var(--radius-sm);padding:12px;border:1px solid var(--border)}
+.bc-branch{font-size:11px;color:var(--text3);margin-bottom:6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.bc-val{font-size:20px;font-weight:500;font-family:var(--mono);color:var(--text)}
+.bc-sub{font-size:11px;color:var(--text2);margin-top:3px}
+.bc-rank{display:inline-block;background:var(--accent);color:#0d0d0f;font-size:10px;font-weight:600;padding:1px 6px;border-radius:3px;margin-bottom:4px}
+
+/* ── Modals ── */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.75);z-index:500;display:flex;align-items:center;justify-content:center;padding:1rem;backdrop-filter:blur(4px)}
+.modal{background:var(--bg2);border:1px solid var(--border2);border-radius:14px;padding:1.75rem;width:100%;max-width:640px;max-height:90vh;overflow-y:auto;position:relative;box-shadow:0 24px 64px var(--shadow2)}
+.modal.wide{max-width:780px}
+.modal-close{position:absolute;top:14px;right:16px;background:var(--bg4);border:none;color:var(--text2);width:28px;height:28px;border-radius:50%;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center}
+.modal-close:hover{color:var(--text)}
+.modal-job-id{font-size:11px;color:var(--text3);font-family:var(--mono);margin-bottom:6px}
+.modal-title{font-size:20px;font-weight:500;color:var(--text);margin-bottom:4px}
+.modal-device{font-size:14px;color:var(--text2);margin-bottom:1.25rem;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.modal-section{margin-bottom:1.25rem}
+.modal-section-label{font-size:11px;text-transform:uppercase;letter-spacing:0.06em;color:var(--text3);margin-bottom:10px}
+.modal-info-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.modal-info-row{display:flex;flex-direction:column;gap:3px}
+.mil{font-size:11px;color:var(--text3)}.miv{font-size:13px;color:var(--text)}
+.before-after-wrap{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:8px}
+.ba-photo-box{border-radius:var(--radius-sm);overflow:hidden;border:1px solid var(--border2)}
+.ba-photo-label{font-size:11px;padding:6px 10px;font-weight:500;letter-spacing:0.04em;text-transform:uppercase}
+.ba-before .ba-photo-label{background:rgba(94,174,255,0.12);color:var(--info)}
+.ba-after .ba-photo-label{background:rgba(74,222,128,0.12);color:var(--success)}
+.ba-photo-placeholder{width:100%;height:110px;display:flex;align-items:center;justify-content:center;background:var(--bg3);font-size:12px;color:var(--text3)}
+.modal-status-row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.status-step-btn{padding:7px 14px;border-radius:var(--radius-sm);border:1px solid var(--border2);background:none;color:var(--text2);font-size:12px;cursor:pointer;font-family:var(--font);transition:all 0.15s}
+.status-step-btn:hover{background:var(--bg4);color:var(--text)}
+.status-step-btn.current{background:var(--accent);color:#0d0d0f;border-color:var(--accent);font-weight:500}
+
+/* WhatsApp button */
+.btn-wa{background:var(--wa);color:#fff;border:none;padding:9px 16px;border-radius:var(--radius-sm);font-size:13px;font-weight:500;cursor:pointer;font-family:var(--font);display:inline-flex;align-items:center;gap:7px;transition:opacity 0.15s}
+.btn-wa:hover{opacity:0.88}
+.btn-wa svg{width:16px;height:16px;flex-shrink:0}
+
+/* Warranty badge */
+.warranty-badge{display:inline-flex;align-items:center;gap:5px;padding:3px 9px;border-radius:20px;font-size:11px;font-weight:500;background:rgba(255,188,64,0.12);color:var(--warn)}
+.warranty-expired{background:rgba(255,95,87,0.12);color:var(--danger)}
+
+/* Print job card */
+.print-job-card{font-family:var(--font);color:#1a1a1a;padding:1rem}
+.pjc-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:1.25rem;padding-bottom:1rem;border-bottom:2px solid #000}
+.pjc-logo{display:flex;align-items:baseline;gap:4px}
+.pjc-logo-m{font-size:22px;font-weight:700;color:#000;letter-spacing:-1px}
+.pjc-logo-text{font-size:18px;letter-spacing:4px;font-weight:500}
+.pjc-title{font-size:12px;text-transform:uppercase;letter-spacing:0.1em;color:#555;margin-top:2px}
+.pjc-id{font-family:var(--mono);font-size:14px;font-weight:600;text-align:right}
+.pjc-date{font-size:12px;color:#555;text-align:right;margin-top:2px}
+.pjc-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:1rem}
+.pjc-field{border:1px solid #ddd;border-radius:4px;padding:8px 10px}
+.pjc-field-label{font-size:10px;text-transform:uppercase;letter-spacing:0.06em;color:#888;margin-bottom:3px}
+.pjc-field-val{font-size:13px;color:#1a1a1a;font-weight:500;min-height:18px}
+.pjc-photos{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:1rem}
+.pjc-photo-box{border:1px solid #ddd;border-radius:4px;overflow:hidden}
+.pjc-photo-label{font-size:10px;text-transform:uppercase;letter-spacing:0.06em;padding:5px 8px;background:#f5f5f5;color:#555}
+.pjc-photo-area{height:100px;display:flex;align-items:center;justify-content:center;color:#aaa;font-size:11px}
+.pjc-footer{margin-top:1rem;padding-top:1rem;border-top:1px solid #ddd;font-size:11px;color:#888;display:flex;justify-content:space-between}
+.pjc-sig-box{border:1px solid #ddd;border-radius:4px;padding:8px 12px;margin-top:1rem}
+.pjc-sig-label{font-size:10px;text-transform:uppercase;letter-spacing:0.06em;color:#888;margin-bottom:20px}
+.pjc-sig-line{border-top:1px solid #555;margin-top:4px}
+.pjc-sig-name{font-size:11px;color:#888;margin-top:3px}
+
+/* ── Invoice ── */
+.invoice-print{font-family:var(--font);color:var(--text)}
+.inv-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:2rem;padding-bottom:1.25rem;border-bottom:1px solid var(--border)}
+.inv-logo .logo-m{font-size:22px;color:var(--accent);font-weight:600}.inv-logo .logo-text{font-size:18px;letter-spacing:3px}
+.inv-meta{text-align:right;font-size:13px;color:var(--text2)}
+.inv-meta strong{display:block;font-size:16px;color:var(--text);margin-bottom:4px}
+.inv-parties{display:grid;grid-template-columns:1fr 1fr;gap:2rem;margin-bottom:1.5rem}
+.inv-party-label{font-size:11px;text-transform:uppercase;letter-spacing:0.06em;color:var(--text3);margin-bottom:8px}
+.inv-party-name{font-size:15px;font-weight:500;color:var(--text);margin-bottom:4px}
+.inv-party-detail{font-size:13px;color:var(--text2);line-height:1.6}
+.inv-table{width:100%;border-collapse:collapse;font-size:13px;margin-bottom:1.5rem}
+.inv-table th{padding:8px 12px;text-align:left;background:var(--bg3);color:var(--text3);font-size:11px;text-transform:uppercase}
+.inv-table td{padding:10px 12px;border-bottom:1px solid var(--border);color:var(--text)}
+.inv-totals{display:flex;justify-content:flex-end}.inv-totals-box{width:260px}
+.inv-total-row{display:flex;justify-content:space-between;padding:6px 0;font-size:13px;color:var(--text2)}
+.inv-total-row.grand{font-size:16px;font-weight:500;color:var(--text);padding-top:10px;border-top:1px solid var(--border2);margin-top:4px}
+.inv-footer{margin-top:2rem;font-size:12px;color:var(--text3);text-align:center;line-height:1.7}
+.inv-actions{display:flex;gap:10px;margin-top:1.25rem;justify-content:flex-end;flex-wrap:wrap}
+
+/* ── Tracking page ── */
+.track-wrap{max-width:520px;margin:0 auto;padding:2rem 1rem}
+.track-header{text-align:center;margin-bottom:2rem}
+.track-job-id{font-size:12px;color:var(--text3);font-family:var(--mono);margin-bottom:6px}
+.track-name{font-size:22px;font-weight:500;color:var(--text);margin-bottom:4px}
+.track-item{font-size:14px;color:var(--text2);margin-bottom:1.5rem}
+.track-steps{display:flex;flex-direction:column;gap:0}
+.track-step{display:flex;gap:16px;position:relative}
+.track-step-line{position:absolute;left:14px;top:28px;bottom:-2px;width:2px;background:var(--border2)}
+.track-step:last-child .track-step-line{display:none}
+.track-step-dot{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:600;flex-shrink:0;z-index:1;position:relative}
+.ts-done{background:var(--success);color:#fff}
+.ts-active{background:var(--accent);color:#0d0d0f}
+.ts-pending{background:var(--bg4);color:var(--text3);border:2px solid var(--border2)}
+.track-step-body{padding:2px 0 24px}
+.track-step-label{font-size:14px;font-weight:500;color:var(--text)}
+.track-step-sub{font-size:12px;color:var(--text3);margin-top:2px}
+.ts-active .track-step-label,.ts-done-label{color:var(--text)}
+.track-info-card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:1.25rem;margin-bottom:1.25rem}
+.track-info-row{display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px solid var(--border);font-size:13px}
+.track-info-row:last-child{border-bottom:none}
+.track-info-key{color:var(--text2)}.track-info-val{color:var(--text);font-weight:500}
+
+/* ── Buttons ── */
+.btn-primary{background:var(--accent);color:#0d0d0f;border:none;padding:9px 20px;border-radius:var(--radius-sm);font-size:13px;font-weight:500;cursor:pointer;font-family:var(--font);transition:background 0.15s}
+.btn-primary:hover{background:var(--accent2)}
+.btn-primary.full{width:100%;padding:11px;font-size:14px;margin-top:8px}
+.btn-secondary{background:var(--bg3);color:var(--text);border:1px solid var(--border2);padding:9px 18px;border-radius:var(--radius-sm);font-size:13px;cursor:pointer;font-family:var(--font);transition:all 0.15s}
+.btn-secondary:hover{background:var(--bg4)}
+.btn-ghost{background:none;border:none;color:var(--text2);font-size:13px;cursor:pointer;padding:4px 8px;border-radius:var(--radius-sm);font-family:var(--font)}
+.btn-ghost:hover{background:var(--bg3);color:var(--text)}.btn-ghost.small{font-size:12px}
+input::placeholder{color:var(--text3)!important;opacity:1}
+.error-msg{color:var(--danger);font-size:13px;background:rgba(255,95,87,0.08);border:1px solid rgba(255,95,87,0.2);padding:9px 12px;border-radius:var(--radius-sm)}
+.empty-state{padding:3rem;text-align:center;color:var(--text3);font-size:13px}
+.empty-state p:first-child{font-size:15px;color:var(--text2);margin-bottom:6px}
+.demo-banner{background:rgba(200,241,105,0.07);border-bottom:1px solid rgba(200,241,105,0.15);padding:8px 1.5rem;font-size:12px;color:var(--accent2);display:flex;align-items:center;gap:8px}
+
+@media(max-width:1024px){.stats-grid{grid-template-columns:repeat(2,1fr)}.dash-grid{grid-template-columns:1fr}.analytics-grid{grid-template-columns:1fr}.service-cat-grid{grid-template-columns:repeat(3,1fr)}}
+@media(max-width:768px){.sidebar{transform:translateX(-100%)}.sidebar.open{transform:translateX(0)}.main-content{margin-left:0}.menu-toggle{display:flex}.stats-grid{grid-template-columns:1fr 1fr}.form-row{grid-template-columns:1fr}.form-row-2{grid-template-columns:1fr}.branch-select{display:none}.service-cat-grid{grid-template-columns:repeat(3,1fr)}}
+@media(max-width:480px){.stats-grid{grid-template-columns:1fr}.view{padding:1rem}.service-cat-grid{grid-template-columns:repeat(2,1fr)}}
+@media print{.sidebar,.topbar,.modal-close,.inv-actions,.demo-banner,.btn-wa{display:none!important}.main-content{margin:0}body{background:white;color:black}[data-theme="dark"]{--bg:#fff;--bg2:#fff;--bg3:#f5f5f5;--text:#000;--text2:#444;--text3:#888;--border:rgba(0,0,0,0.1);--border2:rgba(0,0,0,0.15)}}
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="login-screen" class="screen active">
+  <div class="login-bg"><div class="login-noise"></div><div class="login-grid"></div></div>
+  <div class="login-box">
+    <div class="login-logo"><span class="logo-m">M</span><span class="logo-text">INUTES</span><span class="logo-badge">PORTAL</span></div>
+    <p class="login-sub">Staff & technician access — 36 stores across the UAE</p>
+    <div class="login-demo-hint"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="width:14px;height:14px;flex-shrink:0"><circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01"/></svg>Demo mode — sign in with any email & password</div>
+    <div class="form-group"><label>Email</label><input type="email" id="login-email" placeholder="you@minutes.ae" autocomplete="email"/></div>
+    <div class="form-group" style="margin-top:12px"><label>Password</label><input type="password" id="login-password" placeholder="••••••••" onkeydown="if(event.key==='Enter')handleLogin()"/></div>
+    <div id="login-error" class="error-msg" style="display:none;margin-top:12px"></div>
+    <button class="btn-primary full" onclick="handleLogin()">Sign in</button>
+    <p class="login-note">No account? Contact your branch manager.</p>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="app-screen" class="screen">
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-logo"><span class="logo-m">M</span><span class="logo-text">INUTES</span></div>
+    <nav class="sidebar-nav">
+      <a class="nav-item active" onclick="showView('dashboard')" data-view="dashboard"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>Dashboard</a>
+      <a class="nav-item" onclick="showView('jobs')" data-view="jobs"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/><path d="M9 12h6M9 16h4"/></svg>Job Cards</a>
+      <a class="nav-item" onclick="showView('new-job')" data-view="new-job"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="9"/><path d="M12 8v8M8 12h8"/></svg>New Job</a>
+      <a class="nav-item" onclick="showView('customers')" data-view="customers"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/></svg>Customers</a>
+      <a class="nav-item" onclick="showView('invoices')" data-view="invoices"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14,2 14,8 20,8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>Invoices</a>
+      <a class="nav-item" onclick="showView('analytics')" data-view="analytics"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>Analytics</a>
+    </nav>
+    <div class="sidebar-bottom">
+      <div class="user-pill"><div class="user-avatar" id="user-avatar">A</div><div><div class="user-name" id="user-name">Ahmad</div><div class="user-role">Branch Manager</div></div></div>
+      <button class="nav-item signout" onclick="handleSignout()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9"/></svg>Sign out</button>
+    </div>
+  </aside>
+
+  <main class="main-content">
+    <div class="demo-banner"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="width:14px;height:14px;flex-shrink:0"><circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01"/></svg>Demo mode — sample data only, nothing is saved</div>
+    <div class="topbar">
+      <div class="topbar-left">
+        <button class="menu-toggle" onclick="toggleSidebar()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg></button>
+        <div class="page-title" id="page-title">Dashboard</div>
+      </div>
+      <div class="topbar-right" style="position:relative">
+        <select class="branch-select"><option>All branches</option><option>Dubai Mall</option><option>Mall of the Emirates</option><option>City Walk</option><option>DIFC Gate Avenue</option><option>Mirdif City Centre</option><option>Abu Dhabi Mall</option><option>Yas Mall</option><option>Al Ghurair Centre</option><option>Town Square</option></select>
+        <button class="theme-toggle" id="theme-toggle" onclick="toggleTheme()" title="Toggle light/dark mode">🌙</button>
+        <div class="notif-btn" id="notif-btn" onclick="toggleNotifs()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9M13.73 21a2 2 0 01-3.46 0"/></svg><span class="notif-dot show"></span></div>
+        <div class="notif-panel" id="notif-panel" style="display:none">
+          <div style="font-size:12px;font-weight:500;color:var(--text);margin-bottom:10px">2 overdue jobs</div>
+          <div style="padding:8px 0;border-bottom:1px solid var(--border);cursor:pointer" onclick="openJobModal('j3');toggleNotifs()"><div style="font-size:13px;color:var(--text)">Fatima Al-Zahra</div><div style="font-size:12px;color:var(--text3)">Birkenstock Arizona · Sole repair · Due 20 May</div></div>
+          <div style="padding:8px 0;cursor:pointer" onclick="openJobModal('j5');toggleNotifs()"><div style="font-size:13px;color:var(--text)">Mohammed Al-Rashid</div><div style="font-size:12px;color:var(--text3)">Rolex Submariner · Glass · Due 19 May</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- DASHBOARD -->
+    <div class="view active" id="view-dashboard">
+      <div class="stats-grid">
+        <div class="stat-card"><div class="stat-label">Open jobs</div><div class="stat-val">14</div><div class="stat-sub" style="color:var(--warn)">2 overdue</div></div>
+        <div class="stat-card"><div class="stat-label">Completed today</div><div class="stat-val">9</div><div class="stat-sub" style="color:var(--success)">↑ 4 vs yesterday</div></div>
+        <div class="stat-card"><div class="stat-label">Revenue today (AED)</div><div class="stat-val">5,820</div><div class="stat-sub" style="color:var(--success)">↑ 18% this week</div></div>
+        <div class="stat-card"><div class="stat-label">Overdue jobs</div><div class="stat-val danger">2</div><div class="stat-sub" style="color:var(--danger)">Needs attention</div></div>
+      </div>
+      <div class="dash-grid">
+        <div class="card"><div class="card-header"><div class="card-title">Recent jobs</div><button class="btn-ghost small" onclick="showView('jobs')">View all</button></div><div class="job-list" id="recent-jobs-list"></div></div>
+        <div class="card"><div class="card-header"><div class="card-title">Status overview</div></div><div class="status-chart" id="status-chart"></div></div>
+      </div>
+    </div>
+
+    <!-- JOBS -->
+    <div class="view" id="view-jobs">
+      <div class="view-controls">
+        <div class="search-wrap"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" class="search-icon"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg><input type="text" id="job-search" placeholder="Search by name, phone, job ID or service…" oninput="filterJobs()"/></div>
+        <div class="filter-tabs" id="status-tabs">
+          <button class="ftab active" onclick="filterByStatus('all',this)">All</button>
+          <button class="ftab" onclick="filterByStatus('received',this)">Received</button>
+          <button class="ftab" onclick="filterByStatus('in_progress',this)">In Progress</button>
+          <button class="ftab" onclick="filterByStatus('ready',this)">Ready</button>
+          <button class="ftab" onclick="filterByStatus('delivered',this)">Delivered</button>
+        </div>
+      </div>
+      <div class="table-wrap"><table class="data-table"><thead><tr><th>Job ID</th><th>Customer</th><th>Category</th><th>Item & Service</th><th>Branch</th><th>Status</th><th>Payment</th><th>Date</th><th></th></tr></thead><tbody id="jobs-tbody"></tbody></table></div>
+    </div>
+
+    <!-- NEW JOB -->
+    <div class="view" id="view-new-job">
+      <div class="form-card">
+        <div class="form-section-title">Customer information</div>
+        <div class="form-row">
+          <div class="form-group"><label>Full name <span class="req">*</span></label><input type="text" id="nj-name" placeholder="Ahmad Al-Dosari"/></div>
+          <div class="form-group"><label>Phone number <span class="req">*</span></label><input type="tel" id="nj-phone" placeholder="+971 50 123 4567"/></div>
+          <div class="form-group"><label>Email (optional)</label><input type="email" id="nj-email" placeholder="customer@email.com"/></div>
+        </div>
+        <div class="form-section-title" style="margin-top:1.5rem">Service category <span class="req">*</span></div>
+        <div class="service-cat-grid" id="service-cat-grid">
+          <button class="service-cat-btn" onclick="selectCat('Phone',this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="5" y="2" width="14" height="20" rx="2"/><line x1="12" y1="18" x2="12" y2="18.01"/></svg>Phone</button>
+          <button class="service-cat-btn" onclick="selectCat('Watch',this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="6"/><path d="M12 10v2l1.5 1.5M8.5 3.5l1 3M15.5 3.5l-1 3M8.5 20.5l1-3M15.5 20.5l-1-3"/></svg>Watch</button>
+          <button class="service-cat-btn" onclick="selectCat('Shoes & Bags',this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 18l2-8h14l2 8H2z"/><path d="M6 10V7a6 6 0 0112 0v3"/></svg>Shoes & Bags</button>
+          <button class="service-cat-btn" onclick="selectCat('Laptop',this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="4" width="20" height="13" rx="2"/><path d="M2 20h20"/></svg>Laptop</button>
+          <button class="service-cat-btn" onclick="selectCat('Gaming Console',this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="7" width="20" height="10" rx="2"/><path d="M7 11v4M9 13H5M15 12h2M17 12v0"/></svg>Gaming</button>
+          <button class="service-cat-btn" onclick="selectCat('Key Cutting',this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="8" cy="8" r="5"/><path d="M13 13l6 6M19 13l-6 6"/></svg>Key Cutting</button>
+          <button class="service-cat-btn" onclick="selectCat('Engraving',this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 19l7-7 3 3-7 7-3-3z"/><path d="M18 13l-1.5-7.5L2 2l3.5 14.5L13 18l5-5z"/><circle cx="8" cy="8" r="2"/></svg>Engraving</button>
+          <button class="service-cat-btn" onclick="selectCat('Printing',this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M6 9V2h12v7"/><path d="M6 18H4a2 2 0 01-2-2V9a2 2 0 012-2h16a2 2 0 012 2v7a2 2 0 01-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>Printing</button>
+          <button class="service-cat-btn" onclick="selectCat('Alteration',this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 21l5-5M8 16l8-13 5 3-8 13-5-3z"/><path d="M15 7l2 2"/></svg>Alteration</button>
+          <button class="service-cat-btn" onclick="selectCat('Other',this)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01"/></svg>Other</button>
+        </div>
+        <div class="form-section-title" style="margin-top:0.5rem">Item & service details</div>
+        <div class="form-row">
+          <div class="form-group"><label>Item description <span class="req">*</span></label><input type="text" id="nj-item" placeholder="e.g. Birkenstock Arizona, iPhone 15 Pro…"/></div>
+          <div class="form-group"><label>Service required <span class="req">*</span></label><select id="nj-service"><option value="">Select a category first</option></select></div>
+          <div class="form-group"><label>Brand / Reference</label><input type="text" id="nj-brand" placeholder="e.g. Apple, Rolex, Louis Vuitton…"/></div>
+        </div>
+        <div class="form-row" style="margin-top:16px">
+          <div class="form-group"><label>Estimated cost (AED)</label><input type="number" id="nj-cost" placeholder="0.00" step="0.01"/></div>
+          <div class="form-group"><label>Branch <span class="req">*</span></label><select id="nj-branch"><option value="">Select branch</option><option>Dubai Mall</option><option>Mall of the Emirates</option><option>City Walk</option><option>DIFC Gate Avenue</option><option>Mirdif City Centre</option><option>Abu Dhabi Mall</option><option>Yas Mall</option><option>Al Ghurair Centre</option><option>Town Square</option></select></div>
+          <div class="form-group"><label>Ready date</label><input type="date" id="nj-ready"/></div>
+        </div>
+        <div class="form-row-2" style="margin-top:16px">
+          <div class="form-group"><label>Customer notes</label><textarea id="nj-desc" placeholder="Customer's description of the issue…"></textarea></div>
+          <div class="form-group"><label>Staff notes (internal)</label><textarea id="nj-notes" placeholder="Internal notes — not shown to customer…"></textarea></div>
+        </div>
+        <div class="form-section-title" style="margin-top:1.5rem">Item condition photos</div>
+        <div class="photo-upload-area" id="photo-upload">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" style="width:32px;height:32px;margin-bottom:8px"><path d="M23 19a2 2 0 01-2 2H3a2 2 0 01-2-2V8a2 2 0 012-2h4l2-3h6l2 3h4a2 2 0 012 2z"/><circle cx="12" cy="13" r="4"/></svg>
+          <p>Upload before photos</p><p class="upload-sub">Tap to select · JPG, PNG, HEIC accepted</p>
+          <input type="file" id="nj-photos" multiple accept="image/*" onchange="handlePhotoPreview(event)" style="display:none"/>
+        </div>
+        <div id="photo-previews" class="photo-previews"></div>
+        <div class="form-actions">
+          <div id="nj-error" class="error-msg" style="display:none"></div>
+          <button class="btn-secondary" onclick="clearForm()">Clear</button>
+          <button class="btn-primary" onclick="createJobDemo()">Create job card</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- CUSTOMERS -->
+    <div class="view" id="view-customers">
+      <div class="view-controls"><div class="search-wrap"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" class="search-icon"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg><input type="text" id="cust-search" placeholder="Search by name or phone…" oninput="filterCustomers()"/></div></div>
+      <div class="table-wrap"><table class="data-table"><thead><tr><th>Name</th><th>Phone</th><th>Email</th><th>Total jobs</th><th>Last visit</th><th></th></tr></thead><tbody id="customers-tbody"></tbody></table></div>
+    </div>
+
+    <!-- INVOICES -->
+    <div class="view" id="view-invoices">
+      <div class="view-controls">
+        <div class="search-wrap"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" class="search-icon"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg><input type="text" id="inv-search" placeholder="Search invoices…" oninput="filterInvoices()"/></div>
+        <div class="filter-tabs"><button class="ftab active" onclick="filterInvStatus('all',this)">All</button><button class="ftab" onclick="filterInvStatus('unpaid',this)">Unpaid</button><button class="ftab" onclick="filterInvStatus('paid',this)">Paid</button></div>
+      </div>
+      <div class="table-wrap"><table class="data-table"><thead><tr><th>Invoice #</th><th>Customer</th><th>Service</th><th>Amount (AED)</th><th>VAT 5%</th><th>Total</th><th>Status</th><th>Date</th><th></th></tr></thead><tbody id="invoices-tbody"></tbody></table></div>
+    </div>
+
+    <!-- ANALYTICS -->
+    <div class="view" id="view-analytics">
+      <div class="analytics-grid">
+        <div class="card"><div class="card-header"><div class="card-title">Revenue by branch (AED)</div></div><div id="branch-chart" class="bar-chart-wrap"></div></div>
+        <div class="card"><div class="card-header"><div class="card-title">Jobs by service category</div></div><div id="cat-chart" class="bar-chart-wrap"></div></div>
+        <div class="card full-width"><div class="card-header"><div class="card-title">Branch performance comparison</div></div><div class="branch-compare-grid" id="branch-compare"></div></div>
+        <div class="card full-width"><div class="card-header"><div class="card-title">Monthly revenue trend (AED)</div></div><div id="trend-chart" class="bar-chart-wrap tall"></div></div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<!-- JOB MODAL -->
+<div class="modal-overlay" id="modal-overlay" onclick="closeModal()" style="display:none"><div class="modal" onclick="event.stopPropagation()"><button class="modal-close" onclick="closeModal()">×</button><div id="modal-content"></div></div></div>
+
+<!-- INVOICE MODAL -->
+<div class="modal-overlay" id="inv-overlay" onclick="closeInvModal()" style="display:none"><div class="modal wide" onclick="event.stopPropagation()"><button class="modal-close" onclick="closeInvModal()">×</button><div id="inv-content"></div></div></div>
+
+<!-- PRINT JOB CARD MODAL -->
+<div class="modal-overlay" id="print-overlay" onclick="closePrintModal()" style="display:none"><div class="modal wide" onclick="event.stopPropagation()"><button class="modal-close" onclick="closePrintModal()">×</button><div id="print-content"></div></div></div>
+
+<!-- TRACKING PAGE MODAL -->
+<div class="modal-overlay" id="track-overlay" onclick="closeTrackModal()" style="display:none"><div class="modal" onclick="event.stopPropagation()"><button class="modal-close" onclick="closeTrackModal()">×</button><div id="track-content"></div></div></div>
+
+<script>
+// ── Service options ────────────────────────────────────────────
+const SERVICE_OPTIONS={
+  'Phone':['Screen replacement','Battery replacement','Charging port repair','Back glass repair','Camera repair','Speaker / mic repair','Water damage repair','Software issue / unlock','Accessories'],
+  'Watch':['Battery replacement','Glass replacement','Full service & clean','Bracelet adjustment','Strap replacement','Crown / button repair','Watch polishing'],
+  'Shoes & Bags':['Sole replacement','Heel repair','Stitching & gluing','Zip replacement','Strap repair','Cleaning & restoration','Colour refresh','Lining repair'],
+  'Laptop':['Screen replacement','Battery replacement','Keyboard repair','Charging port repair','Data recovery','SSD / RAM upgrade','Software & OS repair','Cleaning & servicing'],
+  'Gaming Console':['HDMI port repair','Disc reader repair','Controller repair','Overheating fix','Software / firmware','Hard drive replacement','Full service & clean'],
+  'Key Cutting':['House / office key','Car key duplication','Car remote duplication','Safe key duplication','Shutter key','Padlock key','Combination lock service'],
+  'Engraving':['Name / text engraving','Logo engraving','Watch engraving','Jewellery engraving','Trophy engraving','Gift item engraving','Custom design'],
+  'Printing':['Business cards','Flyers & brochures','Stamps / rubber stamps','T-shirt / tote printing','Sublimation printing','Photo printing','Stickers & labels'],
+  'Alteration':['Hemming & shortening','Taking in / letting out','Zip replacement','Patching & mending','Embroidery','Lining replacement','Button replacement'],
+  'Other':['Necklace / jewellery repair','Umbrella repair','Luggage repair','Custom request'],
+};
+const CAT_CLASS={'Phone':'cat-phone','Watch':'cat-watch','Shoes & Bags':'cat-shoes','Laptop':'cat-laptop','Gaming Console':'cat-gaming','Key Cutting':'cat-key','Engraving':'cat-engraving','Printing':'cat-printing','Alteration':'cat-alteration','Other':'cat-other'};
+const CAT_EMOJI={'Phone':'📱','Watch':'⌚','Shoes & Bags':'👟','Laptop':'💻','Gaming Console':'🎮','Key Cutting':'🗝','Engraving':'✏️','Printing':'🖨','Alteration':'✂️','Other':'🔧'};
+
+// ── Sample data ────────────────────────────────────────────────
+const JOBS=[
+  {id:'j1',job_id:'MIN-A1B2C3',customer_name:'Ahmad Salim Al-Dosari',customer_phone:'+971 50 219 8783',customer_email:'ahmad@email.com',category:'Phone',item:'Samsung Galaxy S24',service:'Screen replacement',brand:'Samsung',estimated_cost:350,branch:'Dubai Mall',ready_date:'2026-05-26',notes:'Front screen cracked after drop',staff_notes:'OEM screen ordered',status:'in_progress',payment_status:'unpaid',created_at:'2026-05-24T09:15:00Z'},
+  {id:'j2',job_id:'MIN-D4E5F6',customer_name:'Sara Mohammed Al-Mansoori',customer_phone:'+971 55 334 9012',customer_email:'sara@email.com',category:'Watch',item:'Rolex Submariner',service:'Full service & clean',brand:'Rolex',estimated_cost:420,branch:'Mall of the Emirates',ready_date:'2026-05-25',notes:'Annual service, bracelet clean',staff_notes:'',status:'ready',payment_status:'unpaid',created_at:'2026-05-23T11:30:00Z'},
+  {id:'j3',job_id:'MIN-G7H8I9',customer_name:'Fatima Al-Zahra',customer_phone:'+971 52 441 7823',customer_email:'',category:'Shoes & Bags',item:'Birkenstock Arizona',service:'Sole replacement',brand:'Birkenstock',estimated_cost:95,branch:'City Walk',ready_date:'2026-05-20',notes:'Both soles worn through',staff_notes:'Cork footbed needs re-sealing too',status:'in_progress',payment_status:'unpaid',created_at:'2026-05-21T14:00:00Z'},
+  {id:'j4',job_id:'MIN-J1K2L3',customer_name:'Khalid Ibrahim Al-Nuaimi',customer_phone:'+971 50 887 2341',customer_email:'khalid@work.ae',category:'Laptop',item:'MacBook Pro 14"',service:'Battery replacement',brand:'Apple',estimated_cost:580,branch:'DIFC Gate Avenue',ready_date:'2026-05-27',notes:'Battery health 54%',staff_notes:'',status:'received',payment_status:'unpaid',created_at:'2026-05-25T08:00:00Z'},
+  {id:'j5',job_id:'MIN-M4N5O6',customer_name:'Mohammed Al-Rashid',customer_phone:'+971 56 123 4567',customer_email:'',category:'Watch',item:'Rolex Submariner Date',service:'Glass replacement',brand:'Rolex',estimated_cost:280,branch:'Mirdif City Centre',ready_date:'2026-05-19',notes:'Sapphire crystal cracked',staff_notes:'Waiting for crystal to arrive',status:'in_progress',payment_status:'unpaid',created_at:'2026-05-20T10:00:00Z'},
+  {id:'j6',job_id:'MIN-P7Q8R9',customer_name:'Layla Hassan Al-Farsi',customer_phone:'+971 54 998 1234',customer_email:'layla@gmail.com',category:'Shoes & Bags',item:'Louis Vuitton Neverfull MM',service:'Zip replacement',brand:'Louis Vuitton',estimated_cost:160,branch:'Dubai Mall',ready_date:'2026-05-22',notes:'Interior zip broken',staff_notes:'',status:'delivered',payment_status:'paid',created_at:'2026-05-20T13:00:00Z'},
+  {id:'j7',job_id:'MIN-S1T2U3',customer_name:'Omar Yusuf Al-Shamsi',customer_phone:'+971 50 776 5432',customer_email:'omar@email.com',category:'Engraving',item:'Stainless steel hip flask',service:'Name / text engraving',brand:'',estimated_cost:45,branch:'Dubai Mall',ready_date:'2026-05-25',notes:'Engrave: "To Omar, Always" in Arabic script',staff_notes:'',status:'ready',payment_status:'unpaid',created_at:'2026-05-24T15:30:00Z'},
+  {id:'j8',job_id:'MIN-V4W5X6',customer_name:'Noura Abdullah Al-Qassimi',customer_phone:'+971 55 213 8765',customer_email:'noura@hotmail.com',category:'Alteration',item:'Abaya',service:'Hemming & shortening',brand:'',estimated_cost:60,branch:'Mall of the Emirates',ready_date:'2026-05-24',notes:'Shorten by 4cm all around',staff_notes:'',status:'delivered',payment_status:'paid',created_at:'2026-05-22T09:00:00Z'},
+  {id:'j9',job_id:'MIN-Y7Z8A9',customer_name:'Hassan Al-Blooshi',customer_phone:'+971 50 441 9988',customer_email:'',category:'Key Cutting',item:'Office key x3 copies',service:'House / office key',brand:'',estimated_cost:30,branch:'Al Ghurair Centre',ready_date:'2026-05-25',notes:'3 copies of master key',staff_notes:'',status:'delivered',payment_status:'paid',created_at:'2026-05-25T10:00:00Z'},
+  {id:'j10',job_id:'MIN-B1C2D3',customer_name:'Mariam Khalid Al-Suwaidi',customer_phone:'+971 56 889 3344',customer_email:'mariam@email.ae',category:'Gaming Console',item:'PlayStation 5',service:'HDMI port repair',brand:'Sony',estimated_cost:220,branch:'Yas Mall',ready_date:'2026-05-26',notes:'No display output',staff_notes:'HDMI port bent pins',status:'in_progress',payment_status:'unpaid',created_at:'2026-05-24T12:00:00Z'},
+];
+const INVOICES=JOBS.map((j,i)=>({id:'inv'+i,invoice_number:'INV-'+j.job_id.slice(4),job_id:j.id,customer_name:j.customer_name,amount:j.estimated_cost,vat:+(j.estimated_cost*0.05).toFixed(2),total:+(j.estimated_cost*1.05).toFixed(2),payment_status:j.payment_status,created_at:j.created_at,job:j}));
+const CUSTOMERS=[
+  {name:'Ahmad Salim Al-Dosari',phone:'+971 50 219 8783',email:'ahmad@email.com',jobs:1,last:'24 May 2026'},
+  {name:'Sara Mohammed Al-Mansoori',phone:'+971 55 334 9012',email:'sara@email.com',jobs:2,last:'23 May 2026'},
+  {name:'Fatima Al-Zahra',phone:'+971 52 441 7823',email:'—',jobs:3,last:'21 May 2026'},
+  {name:'Khalid Ibrahim Al-Nuaimi',phone:'+971 50 887 2341',email:'khalid@work.ae',jobs:1,last:'25 May 2026'},
+  {name:'Mohammed Al-Rashid',phone:'+971 56 123 4567',email:'—',jobs:1,last:'20 May 2026'},
+  {name:'Layla Hassan Al-Farsi',phone:'+971 54 998 1234',email:'layla@gmail.com',jobs:4,last:'22 May 2026'},
+  {name:'Omar Yusuf Al-Shamsi',phone:'+971 50 776 5432',email:'omar@email.com',jobs:2,last:'24 May 2026'},
+  {name:'Noura Abdullah Al-Qassimi',phone:'+971 55 213 8765',email:'noura@hotmail.com',jobs:2,last:'22 May 2026'},
+  {name:'Hassan Al-Blooshi',phone:'+971 50 441 9988',email:'—',jobs:1,last:'25 May 2026'},
+  {name:'Mariam Khalid Al-Suwaidi',phone:'+971 56 889 3344',email:'mariam@email.ae',jobs:1,last:'24 May 2026'},
+];
+
+let allJobs=[...JOBS],jobStatusFilter='all',invStatusFilter='all',selectedPhotos=[],selectedCat='';
+
+// ── Theme ──────────────────────────────────────────────────────
+function toggleTheme(){
+  const html=document.documentElement;
+  const isDark=html.getAttribute('data-theme')==='dark';
+  html.setAttribute('data-theme',isDark?'light':'dark');
+  document.getElementById('theme-toggle').textContent=isDark?'🌙':'☀️';
+  localStorage.setItem('minutes-theme',isDark?'light':'dark');
+}
+(function(){const t=localStorage.getItem('minutes-theme');if(t){document.documentElement.setAttribute('data-theme',t);document.addEventListener('DOMContentLoaded',()=>{const btn=document.getElementById('theme-toggle');if(btn)btn.textContent=t==='light'?'🌙':'☀️';});}})();
+
+// ── Auth ───────────────────────────────────────────────────────
+function handleLogin(){
+  const email=document.getElementById('login-email').value.trim();
+  const pass=document.getElementById('login-password').value;
+  const err=document.getElementById('login-error');
+  if(!email||!pass){err.textContent='Please enter your email and password.';err.style.display='block';return;}
+  const name=email.split('@')[0].split(/[._]/).map(w=>w.charAt(0).toUpperCase()+w.slice(1)).join(' ');
+  document.getElementById('user-name').textContent=name;
+  document.getElementById('user-avatar').textContent=name.charAt(0).toUpperCase();
+  document.getElementById('login-screen').classList.remove('active');
+  document.getElementById('app-screen').classList.add('active');
+  renderDashboard();
+}
+function handleSignout(){document.getElementById('app-screen').classList.remove('active');document.getElementById('login-screen').classList.add('active');}
+
+// ── Dashboard ──────────────────────────────────────────────────
+function renderDashboard(){
+  document.getElementById('recent-jobs-list').innerHTML=allJobs.slice(0,6).map(j=>`
+    <div class="job-list-item" onclick="openJobModal('${j.id}')">
+      <div class="jli-left">
+        <div class="jli-id">${j.job_id}</div>
+        <div style="margin-bottom:2px"><span class="cat-pill ${CAT_CLASS[j.category]||'cat-other'}">${CAT_EMOJI[j.category]||'🔧'} ${j.category}</span></div>
+        <div class="jli-name">${esc(j.customer_name)}</div>
+        <div class="jli-device">${esc(j.item)} · ${esc(j.service)}</div>
+      </div>
+      ${statusBadge(j.status)}
+    </div>`).join('');
+  const statuses=['received','in_progress','ready','delivered'];
+  const counts=statuses.map(s=>allJobs.filter(j=>j.status===s).length);
+  const max=Math.max(...counts,1);
+  const colors={received:'#5eaeff',in_progress:'#c8f169',ready:'#4ade80',delivered:'#444'};
+  const labels={received:'Received',in_progress:'In Progress',ready:'Ready',delivered:'Delivered'};
+  document.getElementById('status-chart').innerHTML=statuses.map((s,i)=>`<div class="sc-row"><div class="sc-label">${labels[s]}</div><div class="sc-bar-wrap"><div class="sc-bar" style="width:${(counts[i]/max*100).toFixed(1)}%;background:${colors[s]}"></div></div><div class="sc-count">${counts[i]}</div></div>`).join('');
+}
+
+// ── Jobs ───────────────────────────────────────────────────────
+function isOverdue(j){return j.ready_date&&new Date(j.ready_date)<new Date()&&j.status!=='delivered';}
+function renderJobs(jobs){
+  const tbody=document.getElementById('jobs-tbody');
+  if(!jobs.length){tbody.innerHTML=`<tr><td colspan="9"><div class="empty-state"><p>No jobs found</p></div></td></tr>`;return;}
+  tbody.innerHTML=jobs.map(j=>`
+    <tr onclick="openJobModal('${j.id}')" ${isOverdue(j)?'class="overdue"':''}>
+      <td class="mono" style="color:var(--text3)">${j.job_id}${isOverdue(j)?` <span style="color:var(--danger);font-size:10px">⚠ OVERDUE</span>`:''}</td>
+      <td>${esc(j.customer_name)}</td>
+      <td><span class="cat-pill ${CAT_CLASS[j.category]||'cat-other'}">${CAT_EMOJI[j.category]||'🔧'} ${j.category}</span></td>
+      <td><div style="font-size:13px">${esc(j.item)}</div><div style="font-size:11px;color:var(--text3);margin-top:2px">${esc(j.service)}</div></td>
+      <td style="color:var(--text2);font-size:12px">${esc(j.branch)}</td>
+      <td>${statusBadge(j.status)}</td>
+      <td>${payBadge(j.payment_status)}</td>
+      <td style="color:var(--text3)">${fmtDate(j.created_at)}</td>
+      <td><button class="btn-ghost small" onclick="event.stopPropagation();openJobModal('${j.id}')">Open →</button></td>
+    </tr>`).join('');
+}
+function filterJobs(){
+  const q=document.getElementById('job-search').value.toLowerCase();
+  let jobs=allJobs.filter(j=>jobStatusFilter==='all'||j.status===jobStatusFilter);
+  if(q)jobs=jobs.filter(j=>(j.customer_name+j.customer_phone+j.job_id+j.item+j.service+j.category).toLowerCase().includes(q));
+  renderJobs(jobs);
+}
+function filterByStatus(s,btn){jobStatusFilter=s;document.querySelectorAll('#status-tabs .ftab').forEach(b=>b.classList.remove('active'));btn.classList.add('active');filterJobs();}
+
+// ── Customers ──────────────────────────────────────────────────
+function renderCustomers(list){document.getElementById('customers-tbody').innerHTML=list.map(c=>`<tr><td>${esc(c.name)}</td><td class="mono">${esc(c.phone)}</td><td style="color:var(--text2)">${esc(c.email)}</td><td>${c.jobs}</td><td style="color:var(--text3)">${c.last}</td><td><button class="btn-ghost small">View jobs →</button></td></tr>`).join('');}
+function filterCustomers(){const q=document.getElementById('cust-search').value.toLowerCase();renderCustomers(q?CUSTOMERS.filter(c=>(c.name+c.phone).toLowerCase().includes(q)):CUSTOMERS);}
+
+// ── Invoices ───────────────────────────────────────────────────
+function renderInvoices(list){document.getElementById('invoices-tbody').innerHTML=list.map(inv=>`<tr onclick="openInvModal('${inv.id}')"><td class="mono" style="color:var(--text3)">${inv.invoice_number}</td><td>${esc(inv.customer_name)}</td><td style="color:var(--text2);font-size:12px">${esc(inv.job.item)} · ${esc(inv.job.service)}</td><td class="mono">${inv.amount.toFixed(2)}</td><td class="mono" style="color:var(--text3)">${inv.vat.toFixed(2)}</td><td class="mono">${inv.total.toFixed(2)}</td><td>${payBadge(inv.payment_status)}</td><td style="color:var(--text3)">${fmtDate(inv.created_at)}</td><td><button class="btn-ghost small" onclick="event.stopPropagation();openInvModal('${inv.id}')">View →</button></td></tr>`).join('');}
+function filterInvoices(){const q=document.getElementById('inv-search').value.toLowerCase();let list=INVOICES.filter(i=>invStatusFilter==='all'||i.payment_status===invStatusFilter);if(q)list=list.filter(i=>(i.customer_name+i.invoice_number).toLowerCase().includes(q));renderInvoices(list);}
+function filterInvStatus(s,btn){invStatusFilter=s;document.querySelectorAll('#view-invoices .ftab').forEach(b=>b.classList.remove('active'));btn.classList.add('active');filterInvoices();}
+
+// ── Analytics ──────────────────────────────────────────────────
+function renderAnalytics(){
+  const branchData=[{label:'Dubai Mall',value:22400,jobs:87},{label:'Mall of the Emirates',value:17800,jobs:71},{label:'DIFC Gate Avenue',value:15200,jobs:58},{label:'City Walk',value:12600,jobs:49},{label:'Abu Dhabi Mall',value:11200,jobs:44},{label:'Mirdif City Centre',value:9800,jobs:38},{label:'Yas Mall',value:8400,jobs:33},{label:'Al Ghurair Centre',value:7100,jobs:28}];
+  renderBar('branch-chart',branchData.map(b=>({label:b.label,val:'AED '+b.value.toLocaleString()})),branchData.map(b=>b.value));
+  renderBar('cat-chart',[{label:'📱 Phone',value:52},{label:'🗝 Key Cutting',value:43},{label:'⌚ Watch',value:38},{label:'👟 Shoes & Bags',value:31},{label:'💻 Laptop',value:24},{label:'✏️ Engraving',value:19},{label:'🖨 Printing',value:17},{label:'✂️ Alteration',value:14},{label:'🎮 Gaming',value:11}].map(b=>({label:b.label,val:b.value+' jobs'})),[52,43,38,31,24,19,17,14,11]);
+  // Branch comparison cards
+  document.getElementById('branch-compare').innerHTML=branchData.map((b,i)=>`
+    <div class="branch-compare-card">
+      ${i===0?'<div class="bc-rank">#1 TOP</div>':''}
+      <div class="bc-branch">${b.label}</div>
+      <div class="bc-val">AED ${b.value.toLocaleString()}</div>
+      <div class="bc-sub">${b.jobs} jobs this month</div>
+    </div>`).join('');
+  renderBar('trend-chart',[{label:'Dec 25',value:41200},{label:'Jan 26',value:44800},{label:'Feb 26',value:42100},{label:'Mar 26',value:48600},{label:'Apr 26',value:51200},{label:'May 26',value:34100}].map(m=>({label:m.label,val:'AED '+m.value.toLocaleString()})),[41200,44800,42100,48600,51200,34100]);
+}
+function renderBar(id,labels,values){const max=Math.max(...values,1);document.getElementById(id).innerHTML=labels.map((l,i)=>`<div class="chart-bar-row"><div class="chart-bar-label">${esc(l.label)}</div><div class="chart-bar-track"><div class="chart-bar-fill" style="width:${(values[i]/max*100).toFixed(1)}%"></div></div><div class="chart-bar-val">${l.val}</div></div>`).join('');}
+
+// ── Warranty ───────────────────────────────────────────────────
+function warrantyStatus(j){
+  if(j.status!=='delivered')return null;
+  const deliveredDate=new Date(j.created_at);
+  const expiryDate=new Date(deliveredDate.getTime()+7*24*60*60*1000);
+  const now=new Date();
+  const daysLeft=Math.ceil((expiryDate-now)/(1000*60*60*24));
+  if(daysLeft<0)return{text:'Warranty expired',expired:true};
+  if(daysLeft===0)return{text:'Warranty expires today',expired:false};
+  return{text:`Warranty: ${daysLeft} day${daysLeft!==1?'s':''} left`,expired:false};
+}
+
+// ── WhatsApp ───────────────────────────────────────────────────
+function sendWhatsApp(phone,jobId,status,item){
+  const msgs={
+    received:`Hello! We've received your ${item} at Minutes. Your job reference is ${jobId}. We'll keep you updated. Thank you for choosing Minutes! 🔧`,
+    in_progress:`Hi! Your ${item} (${jobId}) is now being worked on by our technician. We'll notify you when it's ready. Get it done in Minutes! ⚡`,
+    ready:`Great news! Your ${item} (${jobId}) is ready for collection at Minutes. Please bring this message when you collect. Thank you! ✅`,
+    delivered:`Thank you for choosing Minutes! Your ${item} (${jobId}) has been collected. Your 7-day service warranty is now active. We hope to see you again! 🙏`,
+  };
+  const msg=msgs[status]||`Update for job ${jobId} at Minutes.`;
+  const clean=phone.replace(/\s+/g,'').replace(/^\+/,'');
+  window.open(`https://wa.me/${clean}?text=${encodeURIComponent(msg)}`,'_blank');
+}
+
+// ── Customer tracking view ─────────────────────────────────────
+function openTrackingView(jobId){
+  const j=allJobs.find(x=>x.id===jobId);if(!j)return;
+  const statuses=['received','in_progress','ready','delivered'];
+  const sLabels={received:'Job Received',in_progress:'In Progress',ready:'Ready for Collection',delivered:'Collected'};
+  const sSubs={received:'We have your item and will begin shortly','in_progress':'Our technician is working on it now',ready:'Your item is ready — please collect from the branch',delivered:'Job complete — thank you for choosing Minutes!'};
+  const curIdx=statuses.indexOf(j.status);
+  const warrantyInfo=warrantyStatus(j);
+  document.getElementById('track-content').innerHTML=`
+    <div class="track-wrap">
+      <div class="track-header">
+        <div style="display:flex;justify-content:center;align-items:baseline;gap:4px;margin-bottom:1rem"><span class="logo-m" style="font-size:20px">M</span><span class="logo-text" style="font-size:16px;letter-spacing:3px">INUTES</span></div>
+        <div class="track-job-id">${j.job_id}</div>
+        <div class="track-name">${esc(j.customer_name)}</div>
+        <div class="track-item"><span class="cat-pill ${CAT_CLASS[j.category]||'cat-other'}">${CAT_EMOJI[j.category]||'🔧'} ${j.category}</span> ${esc(j.item)}</div>
+        ${warrantyInfo?`<span class="warranty-badge ${warrantyInfo.expired?'warranty-expired':''}">${warrantyInfo.text}</span>`:''}
+      </div>
+      <div class="track-info-card">
+        <div class="track-info-row"><span class="track-info-key">Service</span><span class="track-info-val">${esc(j.service)}</span></div>
+        <div class="track-info-row"><span class="track-info-key">Branch</span><span class="track-info-val">${esc(j.branch)}</span></div>
+        <div class="track-info-row"><span class="track-info-key">Estimated cost</span><span class="track-info-val" style="color:var(--accent)">AED ${j.estimated_cost.toFixed(2)}</span></div>
+        <div class="track-info-row"><span class="track-info-key">Ready date</span><span class="track-info-val">${j.ready_date?fmtDate(j.ready_date):'—'}</span></div>
+      </div>
+      <div class="track-steps">
+        ${statuses.map((s,i)=>{
+          const done=i<curIdx,active=i===curIdx;
+          return`<div class="track-step"><div class="track-step-line"></div><div class="track-step-dot ${done?'ts-done':active?'ts-active':'ts-pending'}">${done?'✓':i+1}</div><div class="track-step-body"><div class="track-step-label" style="color:${active?'var(--accent)':done?'var(--success)':'var(--text3)'}">${sLabels[s]}</div><div class="track-step-sub">${active||done?sSubs[s]:''}</div></div></div>`;
+        }).join('')}
+      </div>
+      <div style="margin-top:1.5rem;text-align:center;font-size:12px;color:var(--text3)">Questions? Call Minutes: 800-MINUTES · www.minutes.co.ae</div>
+    </div>`;
+  closeModal();
+  document.getElementById('track-overlay').style.display='flex';
+}
+function closeTrackModal(){document.getElementById('track-overlay').style.display='none';}
+
+// ── Print job card ─────────────────────────────────────────────
+function openPrintJobCard(jobId){
+  const j=allJobs.find(x=>x.id===jobId);if(!j)return;
+  const date=new Date(j.created_at).toLocaleDateString('en-AE',{day:'numeric',month:'short',year:'numeric'});
+  document.getElementById('print-content').innerHTML=`
+    <div class="print-job-card" id="printable-card">
+      <div class="pjc-header">
+        <div><div class="pjc-logo"><span class="pjc-logo-m">M</span><span class="pjc-logo-text">INUTES</span></div><div class="pjc-title">Service Job Card</div></div>
+        <div><div class="pjc-id">${j.job_id}</div><div class="pjc-date">${date}</div><div class="pjc-date">${esc(j.branch)}</div></div>
+      </div>
+      <div class="pjc-grid">
+        <div class="pjc-field"><div class="pjc-field-label">Customer name</div><div class="pjc-field-val">${esc(j.customer_name)}</div></div>
+        <div class="pjc-field"><div class="pjc-field-label">Phone number</div><div class="pjc-field-val">${esc(j.customer_phone)}</div></div>
+        <div class="pjc-field"><div class="pjc-field-label">Category</div><div class="pjc-field-val">${CAT_EMOJI[j.category]} ${j.category}</div></div>
+        <div class="pjc-field"><div class="pjc-field-label">Item</div><div class="pjc-field-val">${esc(j.item)}</div></div>
+        <div class="pjc-field"><div class="pjc-field-label">Brand / Reference</div><div class="pjc-field-val">${esc(j.brand||'—')}</div></div>
+        <div class="pjc-field"><div class="pjc-field-label">Service required</div><div class="pjc-field-val">${esc(j.service)}</div></div>
+        <div class="pjc-field"><div class="pjc-field-label">Estimated cost</div><div class="pjc-field-val">AED ${j.estimated_cost.toFixed(2)}</div></div>
+        <div class="pjc-field"><div class="pjc-field-label">Ready date</div><div class="pjc-field-val">${j.ready_date?fmtDate(j.ready_date):'—'}</div></div>
+      </div>
+      <div class="pjc-field" style="margin-bottom:10px"><div class="pjc-field-label">Customer notes</div><div class="pjc-field-val">${esc(j.notes||'—')}</div></div>
+      <div class="pjc-photos">
+        <div class="pjc-photo-box"><div class="pjc-photo-label">Before photo</div><div class="pjc-photo-area">Photo taken at intake</div></div>
+        <div class="pjc-photo-box"><div class="pjc-photo-label">After photo</div><div class="pjc-photo-area">Photo taken on completion</div></div>
+      </div>
+      <div class="pjc-sig-box" style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:1rem">
+        <div><div class="pjc-sig-label">Customer signature</div><div style="height:40px"></div><div class="pjc-sig-line"></div><div class="pjc-sig-name">I agree to the terms & 7-day warranty policy</div></div>
+        <div><div class="pjc-sig-label">Staff signature</div><div style="height:40px"></div><div class="pjc-sig-line"></div><div class="pjc-sig-name">Technician / front desk</div></div>
+      </div>
+      <div class="pjc-footer"><span>www.minutes.co.ae · 800-MINUTES</span><span>Service warranty: 7 days from collection</span></div>
+    </div>
+    <div class="inv-actions"><button class="btn-primary" onclick="window.print()">Print job card</button><button class="btn-ghost" onclick="closePrintModal()">Close</button></div>`;
+  closeModal();
+  document.getElementById('print-overlay').style.display='flex';
+}
+function closePrintModal(){document.getElementById('print-overlay').style.display='none';}
+
+// ── New Job ────────────────────────────────────────────────────
+function selectCat(cat,btn){selectedCat=cat;document.querySelectorAll('.service-cat-btn').forEach(b=>b.classList.remove('selected'));btn.classList.add('selected');const sel=document.getElementById('nj-service');sel.innerHTML='<option value="">Select service</option>'+(SERVICE_OPTIONS[cat]||[]).map(o=>`<option>${o}</option>`).join('');}
+function createJobDemo(){
+  const name=document.getElementById('nj-name').value.trim();
+  const phone=document.getElementById('nj-phone').value.trim();
+  const item=document.getElementById('nj-item').value.trim();
+  const service=document.getElementById('nj-service').value;
+  const branch=document.getElementById('nj-branch').value;
+  const err=document.getElementById('nj-error');
+  if(!name||!phone||!selectedCat||!item||!service||!branch){err.textContent='Please fill in all required fields and select a service category.';err.style.display='block';return;}
+  const newJob={id:'j'+Date.now(),job_id:'MIN-'+Math.random().toString(36).slice(2,8).toUpperCase(),customer_name:name,customer_phone:phone,customer_email:document.getElementById('nj-email').value,category:selectedCat,item,service,brand:document.getElementById('nj-brand').value,estimated_cost:parseFloat(document.getElementById('nj-cost').value)||0,branch,ready_date:document.getElementById('nj-ready').value,notes:document.getElementById('nj-desc').value,staff_notes:document.getElementById('nj-notes').value,status:'received',payment_status:'unpaid',created_at:new Date().toISOString()};
+  allJobs.unshift(newJob);clearForm();showView('jobs');filterJobs();setTimeout(()=>openJobModal(newJob.id),100);
+}
+function handlePhotoPreview(e){selectedPhotos=Array.from(e.target.files);document.getElementById('photo-previews').innerHTML=selectedPhotos.map((f,i)=>`<div class="photo-preview-item"><img src="${URL.createObjectURL(f)}"/><button class="rm-photo" onclick="removePhoto(${i})">×</button></div>`).join('');}
+function removePhoto(i){selectedPhotos.splice(i,1);document.getElementById('photo-previews').innerHTML=selectedPhotos.map((f,j)=>`<div class="photo-preview-item"><img src="${URL.createObjectURL(f)}"/><button class="rm-photo" onclick="removePhoto(${j})">×</button></div>`).join('');}
+function clearForm(){['nj-name','nj-phone','nj-email','nj-item','nj-brand','nj-cost','nj-branch','nj-ready','nj-desc','nj-notes'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});document.getElementById('nj-service').innerHTML='<option value="">Select a category first</option>';document.querySelectorAll('.service-cat-btn').forEach(b=>b.classList.remove('selected'));selectedCat='';selectedPhotos=[];document.getElementById('photo-previews').innerHTML='';document.getElementById('nj-error').style.display='none';}
+
+// ── Job Modal ──────────────────────────────────────────────────
+function openJobModal(jobId){
+  const j=allJobs.find(x=>x.id===jobId);if(!j)return;
+  const statuses=['received','in_progress','ready','delivered'];
+  const sLabels={received:'Received',in_progress:'In Progress',ready:'Ready',delivered:'Delivered'};
+  const overdue=isOverdue(j);
+  const warrantyInfo=warrantyStatus(j);
+  document.getElementById('modal-content').innerHTML=`
+    <div class="modal-job-id">${j.job_id}${overdue?` <span style="color:var(--danger);font-size:11px">⚠ OVERDUE</span>`:''}</div>
+    <div class="modal-title">${esc(j.customer_name)}</div>
+    <div class="modal-device"><span class="cat-pill ${CAT_CLASS[j.category]||'cat-other'}">${CAT_EMOJI[j.category]||'🔧'} ${j.category}</span><span>${esc(j.item)}</span></div>
+    ${warrantyInfo?`<div style="margin-bottom:1rem"><span class="warranty-badge ${warrantyInfo.expired?'warranty-expired':''}">${warrantyInfo.text}</span></div>`:''}
+    <div class="modal-section"><div class="modal-section-label">Details</div>
+      <div class="modal-info-grid">
+        <div class="modal-info-row"><div class="mil">Service</div><div class="miv">${esc(j.service)}</div></div>
+        <div class="modal-info-row"><div class="mil">Brand</div><div class="miv">${esc(j.brand||'—')}</div></div>
+        <div class="modal-info-row"><div class="mil">Phone</div><div class="miv">${esc(j.customer_phone)}</div></div>
+        <div class="modal-info-row"><div class="mil">Email</div><div class="miv">${esc(j.customer_email||'—')}</div></div>
+        <div class="modal-info-row"><div class="mil">Branch</div><div class="miv">${esc(j.branch)}</div></div>
+        <div class="modal-info-row"><div class="mil">Cost estimate</div><div class="miv" style="color:var(--accent)">AED ${j.estimated_cost.toFixed(2)}</div></div>
+        <div class="modal-info-row"><div class="mil">Ready date</div><div class="miv" style="${overdue?'color:var(--danger)':''}">${j.ready_date?fmtDate(j.ready_date):'—'}${overdue?' ⚠':''}</div></div>
+        <div class="modal-info-row"><div class="mil">Created</div><div class="miv">${fmtDate(j.created_at)}</div></div>
+      </div>
+    </div>
+    ${j.notes?`<div class="modal-section"><div class="modal-section-label">Customer notes</div><p style="font-size:13px;color:var(--text2)">${esc(j.notes)}</p></div>`:''}
+    ${j.staff_notes?`<div class="modal-section"><div class="modal-section-label">Staff notes</div><p style="font-size:13px;color:var(--text3)">${esc(j.staff_notes)}</p></div>`:''}
+    <div class="modal-section"><div class="modal-section-label">Before &amp; after photos</div>
+      <div class="before-after-wrap">
+        <div class="ba-photo-box ba-before"><div class="ba-photo-label">Before</div><div class="ba-photo-placeholder">No photo yet</div></div>
+        <div class="ba-photo-box ba-after"><div class="ba-photo-label">After</div><div class="ba-photo-placeholder">${j.status==='delivered'?'No photo uploaded':'Not completed yet'}</div></div>
+      </div>
+    </div>
+    <div class="modal-section"><div class="modal-section-label">Update status</div>
+      <div class="modal-status-row">${statuses.map(s=>`<button class="status-step-btn ${j.status===s?'current':''}" onclick="updateStatus('${j.id}','${s}',this)">${sLabels[s]}</button>`).join('')}</div>
+    </div>
+    <div class="modal-section"><div class="modal-section-label">Payment</div>
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+        ${payBadge(j.payment_status)}
+        ${j.payment_status==='unpaid'?`<button class="btn-primary" onclick="markPaid('${j.id}')">Mark as paid</button>`:''}
+        <button class="btn-ghost small" onclick="openInvForJob('${j.id}')">View invoice →</button>
+      </div>
+    </div>
+    <div class="modal-section"><div class="modal-section-label">Actions</div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <button class="btn-wa" onclick="sendWhatsApp('${j.customer_phone}','${j.job_id}','${j.status}','${esc(j.item)}')">
+          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+          WhatsApp update
+        </button>
+        <button class="btn-secondary" onclick="openTrackingView('${j.id}')">Customer tracking view</button>
+        <button class="btn-secondary" onclick="openPrintJobCard('${j.id}')">Print job card</button>
+      </div>
+    </div>`;
+  document.getElementById('modal-overlay').style.display='flex';
+}
+function updateStatus(id,status,btn){document.querySelectorAll('.status-step-btn').forEach(b=>b.classList.remove('current'));btn.classList.add('current');const j=allJobs.find(x=>x.id===id);if(j)j.status=status;renderDashboard();if(document.getElementById('view-jobs').classList.contains('active'))filterJobs();}
+function markPaid(id){const j=allJobs.find(x=>x.id===id);if(j)j.payment_status='paid';const inv=INVOICES.find(i=>i.job_id===id);if(inv)inv.payment_status='paid';openJobModal(id);renderDashboard();}
+function closeModal(){document.getElementById('modal-overlay').style.display='none';}
+
+// ── Invoice Modal ──────────────────────────────────────────────
+function openInvForJob(jobId){closeModal();const inv=INVOICES.find(i=>i.job_id===jobId);if(inv)openInvModal(inv.id);}
+function openInvModal(invId){
+  const inv=INVOICES.find(i=>i.id===invId);if(!inv)return;
+  const j=inv.job;
+  const date=new Date(inv.created_at).toLocaleDateString('en-AE',{year:'numeric',month:'long',day:'numeric'});
+  document.getElementById('inv-content').innerHTML=`
+    <div class="invoice-print">
+      <div class="inv-header">
+        <div class="inv-logo"><div style="display:flex;align-items:baseline;gap:4px;margin-bottom:6px"><span class="logo-m">M</span><span class="logo-text">INUTES</span></div><div style="font-size:12px;color:var(--text2);line-height:1.7">Dubai, United Arab Emirates<br>TRN: 100XXXXXXXXX<br>800-MINUTES · www.minutes.co.ae</div></div>
+        <div class="inv-meta"><strong>TAX INVOICE</strong>${inv.invoice_number}<br>${date}<br><span style="display:inline-block;margin-top:6px">${payBadge(inv.payment_status)}</span></div>
+      </div>
+      <div class="inv-parties">
+        <div><div class="inv-party-label">Bill to</div><div class="inv-party-name">${esc(inv.customer_name)}</div><div class="inv-party-detail">${esc(j.customer_phone)}${j.customer_email?'<br>'+esc(j.customer_email):''}</div></div>
+        <div><div class="inv-party-label">Service details</div><div class="inv-party-detail"><strong style="color:var(--text)">${esc(j.item)}</strong><br>${esc(j.service)}<br>Branch: ${esc(j.branch)}</div></div>
+      </div>
+      <table class="inv-table"><thead><tr><th>Description</th><th>Qty</th><th style="text-align:right">Amount (AED)</th></tr></thead>
+      <tbody><tr><td>${esc(j.item)} — ${esc(j.service)}</td><td>1</td><td style="text-align:right;font-family:var(--mono)">${inv.amount.toFixed(2)}</td></tr></tbody></table>
+      <div class="inv-totals"><div class="inv-totals-box">
+        <div class="inv-total-row"><span>Subtotal</span><span class="mono">${inv.amount.toFixed(2)}</span></div>
+        <div class="inv-total-row"><span>VAT (5%)</span><span class="mono">${inv.vat.toFixed(2)}</span></div>
+        <div class="inv-total-row grand"><span>Total (AED)</span><span class="mono">${inv.total.toFixed(2)}</span></div>
+      </div></div>
+      <div class="inv-footer">Thank you for choosing Minutes — Get it done in Minutes!<br>800-MINUTES · www.minutes.co.ae<br>Service warranty: 7 days · Products exchangeable within 14 days with original receipt</div>
+    </div>
+    <div class="inv-actions">
+      ${inv.payment_status==='unpaid'?`<button class="btn-primary" onclick="markPaidInv('${inv.id}','${j.id}')">Mark as paid</button>`:''}
+      <button class="btn-wa" onclick="sendWhatsApp('${j.customer_phone}','${inv.invoice_number}','ready','${esc(j.item)}')"><svg viewBox="0 0 24 24" fill="currentColor" style="width:14px;height:14px"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>Send invoice via WhatsApp</button>
+      <button class="btn-secondary" onclick="window.print()">Print / Save PDF</button>
+      <button class="btn-ghost" onclick="closeInvModal()">Close</button>
+    </div>`;
+  document.getElementById('inv-overlay').style.display='flex';
+}
+function markPaidInv(invId,jobId){const inv=INVOICES.find(i=>i.id===invId);if(inv)inv.payment_status='paid';const j=allJobs.find(x=>x.id===jobId);if(j)j.payment_status='paid';openInvModal(invId);renderDashboard();}
+function closeInvModal(){document.getElementById('inv-overlay').style.display='none';}
+
+// ── Navigation ─────────────────────────────────────────────────
+function showView(view){
+  document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  document.getElementById('view-'+view).classList.add('active');
+  const nav=document.querySelector(`[data-view="${view}"]`);if(nav)nav.classList.add('active');
+  const titles={dashboard:'Dashboard',jobs:'Job Cards','new-job':'New Job',customers:'Customers',invoices:'Invoices',analytics:'Analytics'};
+  document.getElementById('page-title').textContent=titles[view]||view;
+  if(window.innerWidth<=768)document.getElementById('sidebar').classList.remove('open');
+  if(view==='jobs')renderJobs(allJobs);
+  if(view==='customers')renderCustomers(CUSTOMERS);
+  if(view==='invoices')renderInvoices(INVOICES);
+  if(view==='analytics')setTimeout(renderAnalytics,50);
+}
+function toggleSidebar(){document.getElementById('sidebar').classList.toggle('open');}
+function toggleNotifs(){const p=document.getElementById('notif-panel');p.style.display=p.style.display==='none'?'block':'none';}
+
+// ── Helpers ────────────────────────────────────────────────────
+function statusBadge(s){const l={received:'Received',in_progress:'In Progress',ready:'Ready',delivered:'Delivered'};const c={received:'badge-received',in_progress:'badge-in_progress',ready:'badge-ready',delivered:'badge-delivered'};return`<span class="badge ${c[s]||'badge-received'}"><span class="badge-dot"></span>${l[s]||s}</span>`;}
+function payBadge(s){return s==='paid'?'<span class="badge badge-paid">Paid</span>':'<span class="badge badge-unpaid">Unpaid</span>';}
+function fmtDate(d){if(!d)return'—';return new Date(d).toLocaleDateString('en-AE',{day:'numeric',month:'short',year:'numeric'});}
+function esc(s){if(!s)return'';return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+
+document.addEventListener('click',e=>{if(!e.target.closest('#notif-btn')&&!e.target.closest('#notif-panel'))document.getElementById('notif-panel').style.display='none';});
+document.getElementById('photo-upload').addEventListener('click',()=>document.getElementById('nj-photos').click());
+window.addEventListener('DOMContentLoaded',renderDashboard);
+</script>
+</body>
+</html>
