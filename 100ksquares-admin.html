@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>100KSquares — Manager Dashboard</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<style>
+  :root{
+    --bg: #0b0d10;
+    --panel: #14171b;
+    --panel-2: #1b1f24;
+    --line: #262b31;
+    --text: #e8eaed;
+    --text-dim: #8a9099;
+    --lime: #baff29;
+    --amber: #ffb020;
+    --red: #ff4d4d;
+    --font-display: 'Space Grotesk', sans-serif;
+    --font-mono: 'IBM Plex Mono', monospace;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;background:var(--bg);color:var(--text);font-family:var(--font-mono);min-height:100%;}
+
+  .row{display:flex;justify-content:space-between;font-size:12px;color:var(--text-dim);margin-bottom:8px;}
+  .row b{color:var(--text);font-weight:500;}
+  input[type=text]{
+    width:100%;background:var(--panel-2);border:1px solid var(--line);color:var(--text);
+    padding:8px 10px;border-radius:3px;font-family:var(--font-mono);font-size:13px;margin-bottom:10px;
+  }
+  button.primary{
+    width:100%;background:var(--lime);color:#0b0d10;border:none;padding:12px;border-radius:3px;
+    font-family:var(--font-mono);font-weight:600;font-size:13px;cursor:pointer;
+  }
+  button.primary:hover{filter:brightness(1.08);}
+
+  #adminTop{display:flex;justify-content:space-between;align-items:center;padding:20px 30px;border-bottom:1px solid var(--line);}
+  #adminTop h2{font-family:var(--font-display);margin:0;display:flex;align-items:center;gap:10px;}
+  #adminTop .dot{width:9px;height:9px;background:var(--lime);border-radius:1px;display:inline-block;}
+  #adminBody{padding:30px;max-width:960px;margin:0 auto;}
+  .admin-section{margin-bottom:36px;}
+  .admin-section h4{font-family:var(--font-display);font-size:13px;text-transform:uppercase;letter-spacing:.05em;color:var(--text-dim);margin-bottom:12px;}
+  table{width:100%;border-collapse:collapse;font-size:12px;}
+  th{text-align:left;color:var(--text-dim);font-weight:500;padding:8px;border-bottom:1px solid var(--line);}
+  td{padding:8px;border-bottom:1px solid var(--line);}
+  .btn-sm{background:none;border:1px solid var(--line);color:var(--text-dim);padding:5px 10px;border-radius:3px;font-family:var(--font-mono);font-size:11px;cursor:pointer;}
+  .btn-sm.danger{border-color:rgba(255,77,77,.4);color:var(--red);}
+  .btn-sm.danger:hover{background:rgba(255,77,77,.1);}
+  .btn-sm:hover{color:var(--text);}
+  .flag{color:var(--red);font-size:10px;font-weight:600;text-transform:uppercase;}
+  #loginBox{max-width:320px;margin:120px auto;text-align:center;}
+  #loginBox h3{font-family:var(--font-display);}
+  #loginErr{color:var(--red);font-size:11px;height:16px;margin-top:6px;}
+  .stat-card{background:var(--panel-2);border:1px solid var(--line);border-radius:4px;padding:12px;}
+  .stat-label{font-size:10px;color:var(--text-dim);text-transform:uppercase;}
+  .stat-value{font-family:var(--font-display);font-size:20px;}
+</style>
+</head>
+<body>
+
+<div id="loginBox">
+  <h3>Manager Dashboard login</h3>
+  <p style="font-size:12px;color:var(--text-dim);">This page is not linked from the public site — only people who have this URL can even reach the login.</p>
+  <input type="text" id="loginUser" placeholder="Username">
+  <input type="text" id="loginPass" placeholder="Password" style="-webkit-text-security:disc;">
+  <button class="primary" id="loginBtn">Log in</button>
+  <div id="loginErr"></div>
+</div>
+
+<div id="adminMain" style="display:none;">
+  <div id="adminTop">
+    <h2><span class="dot"></span>100KSquares — Manager Dashboard</h2>
+    <button class="btn-sm" id="adminLogout">Log out</button>
+  </div>
+  <div id="adminBody">
+
+    <div class="admin-section">
+      <h4>Overview</h4>
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:18px;">
+        <div class="stat-card"><div class="stat-label">Total sold</div><div class="stat-value" id="ovSold">0</div></div>
+        <div class="stat-card"><div class="stat-label">Revenue collected</div><div class="stat-value" style="color:var(--lime);" id="ovRevenue">$0.00</div></div>
+        <div class="stat-card"><div class="stat-label">Refunded to sniped owners</div><div class="stat-value" style="color:var(--amber);" id="ovRefunded">$0.00</div></div>
+        <div class="stat-card"><div class="stat-label">Total bids placed</div><div class="stat-value" id="ovBids">0</div></div>
+      </div>
+      <div style="display:flex;gap:10px;font-size:11px;color:var(--text-dim);margin-bottom:20px;">
+        <span>🟢 Active bidding: <b id="ovActive" style="color:var(--text);">0</b></span>
+        <span>🟠 Resting: <b id="ovResting" style="color:var(--text);">0</b></span>
+        <span>⬛ Empty: <b id="ovEmpty" style="color:var(--text);">0</b></span>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:24px;">
+        <div>
+          <div style="font-size:11px;color:var(--text-dim);text-transform:uppercase;margin-bottom:8px;">Top 10 priciest squares</div>
+          <table id="topSquaresTable"><tbody></tbody></table>
+        </div>
+        <div>
+          <div style="font-size:11px;color:var(--text-dim);text-transform:uppercase;margin-bottom:8px;">Recent activity</div>
+          <table id="recentActivityTable"><tbody></tbody></table>
+        </div>
+      </div>
+    </div>
+
+    <div class="admin-section">
+      <h4>Fundraiser — WWF (endangered species) · test mode</h4>
+      <p style="font-size:12px;color:var(--text-dim);margin-bottom:12px;">20% of platform profit, forever — one running total, no resets. Paid out to WWF as a manual transfer whenever you decide to (e.g. monthly). Not a real donation yet — becomes real once real payments are live.</p>
+      <div class="row" style="font-size:14px;"><span>Total platform profit</span><b id="adminProfit">$0.00</b></div>
+      <div class="row" style="font-size:14px;"><span>20% owed to WWF</span><b style="color:var(--amber);" id="adminFundraiser">$0.00</b></div>
+    </div>
+
+    <div class="admin-section">
+      <h4>Reports / disputes</h4>
+      <table id="reportsTable"><thead><tr><th>Square</th><th>Reason</th><th>Reported</th><th></th></tr></thead><tbody></tbody></table>
+      <div id="reportsEmpty" style="font-size:12px;color:var(--text-dim);padding:14px 0;">No reports yet.</div>
+    </div>
+
+    <div class="admin-section">
+      <h4>Content moderation</h4>
+      <p style="font-size:12px;color:var(--text-dim);margin-bottom:12px;">In test mode this runs a placeholder check. In production this call goes to an image-moderation API from a server function — never from the browser, since real API keys can't live in client code.</p>
+      <button class="btn-sm" id="scanBtn">Run moderation scan</button>
+      <table id="scanTable" style="margin-top:14px;"><thead><tr><th>Square</th><th>Flag</th><th></th></tr></thead><tbody></tbody></table>
+    </div>
+
+    <div class="admin-section">
+      <h4>All sold squares</h4>
+      <table id="squaresTable"><thead><tr><th>Square</th><th>Status</th><th>Price</th><th></th></tr></thead><tbody></tbody></table>
+    </div>
+
+  </div>
+</div>
+
+<script>
+/* =====================================================================
+   100KSquares — Manager Dashboard (standalone, not linked from the
+   public site). Same token-gated model as before:
+   NOTE (test build): credentials are checked here in the browser, which
+   means anyone who finds this URL and views source can read them. Fine
+   for testing between you and your dad. Before this handles real
+   disputes/deletes on a live public site, move this to real Supabase
+   Auth so the password never ships to the client at all.
+   ===================================================================== */
+
+const SUPABASE_URL = 'https://mfosbqpjfkamqbvcytgb.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_Rq7Ns0FzsbpyTA8AzkhmXg_c2oAcz2f';
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+const ADMIN_USER = 'cookies';
+const ADMIN_PASS = 'artwork2026';
+
+document.getElementById('loginBtn').onclick = doLogin;
+document.getElementById('loginPass').addEventListener('keydown', e=>{ if(e.key==='Enter') doLogin(); });
+
+function doLogin(){
+  const u = document.getElementById('loginUser').value;
+  const p = document.getElementById('loginPass').value;
+  if(u===ADMIN_USER && p===ADMIN_PASS){
+    document.getElementById('loginBox').style.display='none';
+    document.getElementById('adminMain').style.display='block';
+    renderAdmin();
+  } else {
+    document.getElementById('loginErr').textContent = 'Incorrect username or password.';
+  }
+}
+document.getElementById('adminLogout').onclick = ()=>{
+  document.getElementById('adminMain').style.display='none';
+  document.getElementById('loginBox').style.display='block';
+  document.getElementById('loginPass').value='';
+};
+
+async function renderAdmin(){
+  // ---- overview ----
+  const { data: allSquares } = await sb.from('squares').select('x,y,status,price');
+  const { data: allBids } = await sb.from('bids_log').select('*').order('created_at',{ascending:false});
+
+  const sq = allSquares || [];
+  const bids = allBids || [];
+
+  const revenue = bids.reduce((s,b)=> s + parseFloat(b.price), 0);
+  const refunded = bids.reduce((s,b)=> s + (parseFloat(b.refund_amount)||0), 0);
+  const counts = { active:0, resting:0, empty:0 };
+  sq.forEach(s=> counts[s.status] = (counts[s.status]||0) + 1);
+
+  document.getElementById('ovSold').textContent = sq.length.toLocaleString();
+  document.getElementById('ovRevenue').textContent = '$'+revenue.toFixed(2);
+  document.getElementById('ovRefunded').textContent = '$'+refunded.toFixed(2);
+  document.getElementById('ovBids').textContent = bids.length.toLocaleString();
+  document.getElementById('ovActive').textContent = counts.active||0;
+  document.getElementById('ovResting').textContent = counts.resting||0;
+  document.getElementById('ovEmpty').textContent = counts.empty||0;
+
+  const topSquares = [...sq].sort((a,b)=> b.price-a.price).slice(0,10);
+  document.querySelector('#topSquaresTable tbody').innerHTML = topSquares.map(s=>
+    `<tr><td>(${s.x}, ${s.y})</td><td style="color:var(--lime);">$${parseFloat(s.price).toFixed(2)}</td></tr>`
+  ).join('') || '<tr><td style="color:var(--text-dim);">No squares sold yet.</td></tr>';
+
+  const recent = bids.slice(0,10);
+  document.querySelector('#recentActivityTable tbody').innerHTML = recent.map(b=>
+    `<tr><td>(${b.x}, ${b.y})</td><td>$${parseFloat(b.price).toFixed(2)}</td><td style="color:var(--text-dim);">${new Date(b.created_at).toLocaleTimeString()}</td></tr>`
+  ).join('') || '<tr><td style="color:var(--text-dim);">No activity yet.</td></tr>';
+
+  // ---- fundraiser ----
+  const { data: fs } = await sb.from('fundraiser_public_stats').select('*').single();
+  if(fs){
+    document.getElementById('adminProfit').textContent = '$'+parseFloat(fs.total_profit).toFixed(2);
+    document.getElementById('adminFundraiser').textContent = '$'+parseFloat(fs.total_fundraiser).toFixed(2);
+  }
+
+  // ---- reports (unresolved only) ----
+  const { data: reportRows } = await sb
+    .from('reports').select('*').eq('resolved', false).order('created_at', {ascending:false});
+  const rTbody = document.querySelector('#reportsTable tbody');
+  rTbody.innerHTML = '';
+  const list = reportRows || [];
+  document.getElementById('reportsEmpty').style.display = list.length ? 'none':'block';
+  list.forEach(r=>{
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td>(${r.x}, ${r.y})</td><td>${escapeHtml(r.reason)}</td><td>${new Date(r.created_at).toLocaleString()}</td>
+      <td><button class="btn-sm danger">Delete square — no refund</button></td>`;
+    tr.querySelector('button').onclick = async ()=>{
+      await adminCall('admin_delete_square', { p_x: r.x, p_y: r.y, p_token: ADMIN_PASS });
+      await sb.rpc('admin_resolve_report', { p_id: r.id, p_token: ADMIN_PASS });
+      renderAdmin();
+    };
+    rTbody.appendChild(tr);
+  });
+
+  // ---- all sold squares ----
+  const { data: squareRows } = await sb.from('squares').select('*').order('updated_at', {ascending:false});
+  const sTbody = document.querySelector('#squaresTable tbody');
+  sTbody.innerHTML = '';
+  (squareRows||[]).forEach(row=>{
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td>(${row.x}, ${row.y})</td><td>${row.status}</td><td>$${parseFloat(row.price).toFixed(2)}</td>
+      <td><button class="btn-sm danger">Delete — no refund</button></td>`;
+    tr.querySelector('button').onclick = async ()=>{
+      await adminCall('admin_delete_square', { p_x: row.x, p_y: row.y, p_token: ADMIN_PASS });
+      renderAdmin();
+    };
+    sTbody.appendChild(tr);
+  });
+}
+
+function escapeHtml(s){
+  const d = document.createElement('div'); d.textContent = s; return d.innerHTML;
+}
+
+async function adminCall(fn, params){
+  const { error } = await sb.rpc(fn, params);
+  if(error){ alert('Action failed: ' + error.message); }
+}
+
+// ---- placeholder moderation scan ----
+// In production: send each square's image to a real moderation endpoint
+// from a server-side function (never the browser) and act on the result.
+document.getElementById('scanBtn').onclick = async ()=>{
+  const tbody = document.querySelector('#scanTable tbody');
+  tbody.innerHTML = '<tr><td colspan="3">Scanning...</td></tr>';
+  const { data: allSquares } = await sb.from('squares').select('x,y');
+  setTimeout(()=>{
+    tbody.innerHTML = '';
+    const flagged = (allSquares||[]).filter(()=> Math.random() < 0.02); // placeholder only
+    if(flagged.length===0){
+      tbody.innerHTML = '<tr><td colspan="3" style="color:var(--text-dim);">No squares flagged this pass.</td></tr>';
+      return;
+    }
+    flagged.forEach(({x,y})=>{
+      const tr = document.createElement('tr');
+      tr.innerHTML = `<td>(${x}, ${y})</td><td class="flag">needs review</td>
+        <td><button class="btn-sm danger">Delete — no refund</button></td>`;
+      tr.querySelector('button').onclick = async ()=>{ await adminCall('admin_delete_square', {p_x:x, p_y:y, p_token: ADMIN_PASS}); renderAdmin(); tr.remove(); };
+      tbody.appendChild(tr);
+    });
+  }, 500);
+};
+</script>
+</body>
+</html>
