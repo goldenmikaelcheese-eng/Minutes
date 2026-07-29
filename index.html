@@ -1,0 +1,708 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>100KSquares — Own a piece. Get outbid, get 80% back.</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<style>
+  :root{
+    --bg: #f5f6f4;
+    --panel: #ffffff;
+    --panel-2: #f0f2ef;
+    --line: #e2e5e1;
+    --text: #14181a;
+    --text-dim: #6c7570;
+    --green: #2f9e44;
+    --green-bg: #e8f7ea;
+    --amber: #c8790a;
+    --amber-bg: #fdf1de;
+    --red: #d33a3a;
+    --font-display: 'Space Grotesk', sans-serif;
+    --font-mono: 'IBM Plex Mono', monospace;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;background:var(--bg);color:var(--text);font-family:var(--font-mono);overflow:hidden;height:100%;}
+  ::selection{background:var(--green);color:#fff;}
+
+  /* ---------- TOP BAR ---------- */
+  #topbar{
+    position:fixed;top:0;left:0;right:0;height:56px;z-index:50;
+    background:var(--panel);border-bottom:1px solid var(--line);
+    display:flex;align-items:center;justify-content:space-between;
+    padding:0 18px;gap:16px;
+  }
+  #wordmark{font-family:var(--font-display);font-weight:700;font-size:18px;letter-spacing:-0.02em;display:flex;align-items:center;gap:10px;flex-shrink:0;}
+  #wordmark .dot{width:9px;height:9px;background:var(--green);border-radius:1px;display:inline-block;}
+  #stats{display:flex;gap:24px;font-size:12px;color:var(--text-dim);flex-wrap:wrap;}
+  #stats b{color:var(--text);font-weight:600;}
+  #stats .green{color:var(--green);}
+
+  /* ---------- SEARCH ---------- */
+  #searchWrap{display:flex;align-items:center;gap:6px;background:var(--panel-2);border:1px solid var(--line);border-radius:4px;padding:4px 4px 4px 10px;flex-shrink:0;}
+  #searchWrap svg{flex-shrink:0;}
+  #coordSearch{
+    border:none;background:none;font-family:var(--font-mono);font-size:12px;width:130px;color:var(--text);outline:none;
+  }
+  #coordSearch::placeholder{color:var(--text-dim);}
+  #searchGoBtn{
+    background:var(--text);color:#fff;border:none;padding:6px 12px;border-radius:3px;
+    font-family:var(--font-mono);font-size:11px;cursor:pointer;font-weight:600;
+  }
+  #searchGoBtn:hover{filter:brightness(1.2);}
+  #searchErr{position:fixed;top:64px;left:50%;transform:translateX(-50%);background:#fff;border:1px solid var(--red);color:var(--red);
+    font-size:11px;padding:6px 12px;border-radius:4px;z-index:60;display:none;box-shadow:0 2px 8px rgba(0,0,0,.08);}
+
+  /* ---------- CANVAS AREA ---------- */
+  #canvasWrap{position:fixed;top:56px;left:0;right:0;bottom:36px;overflow:hidden;cursor:grab;}
+  #canvasWrap.dragging{cursor:grabbing;}
+  canvas{display:block;}
+
+  #hint{
+    position:fixed;bottom:44px;left:18px;font-size:11px;color:var(--text-dim);
+    background:rgba(255,255,255,0.92);border:1px solid var(--line);padding:6px 10px;border-radius:3px;
+    pointer-events:none;
+  }
+
+  /* ---------- TICKER ---------- */
+  #ticker{
+    position:fixed;bottom:0;left:0;right:0;height:36px;background:var(--panel);border-top:1px solid var(--line);
+    overflow:hidden;display:flex;align-items:center;z-index:40;
+  }
+  #tickerTrack{white-space:nowrap;display:inline-block;padding-left:100%;animation:scroll 32s linear infinite;font-size:12px;}
+  #tickerTrack span{margin-right:36px;color:var(--text-dim);}
+  #tickerTrack span b{color:var(--green);font-weight:600;}
+  @keyframes scroll{ 0%{transform:translateX(0);} 100%{transform:translateX(-100%);} }
+
+  /* ---------- SIDE PANEL ---------- */
+  #panel{
+    position:fixed;top:56px;right:0;bottom:36px;width:340px;
+    background:var(--panel);border-left:1px solid var(--line);
+    transform:translateX(100%);transition:transform .25s ease;
+    display:flex;flex-direction:column;z-index:45;
+    box-shadow:-4px 0 16px rgba(0,0,0,0.04);
+  }
+  #panel.open{transform:translateX(0);}
+  #panelHead{padding:18px 20px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:center;}
+  #panelHead h2{font-family:var(--font-display);font-size:16px;margin:0;}
+  #panelClose{background:none;border:none;color:var(--text-dim);cursor:pointer;font-size:18px;line-height:1;}
+  #panelBody{padding:20px;overflow-y:auto;flex:1;}
+  .row{display:flex;justify-content:space-between;font-size:12px;color:var(--text-dim);margin-bottom:8px;}
+  .row b{color:var(--text);font-weight:600;}
+  #preview{width:100%;aspect-ratio:1;border-radius:4px;margin:14px 0;border:1px solid var(--line);background:var(--panel-2);}
+  .status-pill{display:inline-block;font-size:10px;padding:3px 8px;border-radius:20px;font-weight:700;letter-spacing:.03em;text-transform:uppercase;}
+  .pill-empty{background:var(--panel-2);color:var(--text-dim);}
+  .pill-active{background:var(--green-bg);color:var(--green);}
+  .pill-resting{background:var(--amber-bg);color:var(--amber);}
+  #countdownWrap{background:var(--green-bg);border-radius:6px;padding:10px 14px;margin-bottom:6px;}
+  #countdown{font-family:var(--font-display);font-size:32px;font-weight:700;margin:2px 0;color:var(--green);}
+  #countdown.urgent{color:var(--red);}
+  #squareMessage{
+    background:var(--panel-2);border:1px solid var(--line);border-radius:6px;padding:10px 12px;
+    font-size:12px;color:var(--text);margin:10px 0;font-style:italic;display:none;
+  }
+  label.small{font-size:11px;color:var(--text-dim);display:block;margin:14px 0 6px;font-style:normal;}
+  input[type=text],input[type=number]{
+    width:100%;background:var(--panel-2);border:1px solid var(--line);color:var(--text);
+    padding:8px 10px;border-radius:3px;font-family:var(--font-mono);font-size:13px;
+  }
+  input[type=color]{width:100%;height:40px;border:1px solid var(--line);border-radius:3px;background:var(--panel-2);padding:2px;}
+  .tabs{display:flex;gap:6px;margin-bottom:6px;}
+  .tab{flex:1;text-align:center;padding:7px;font-size:11px;border:1px solid var(--line);border-radius:3px;cursor:pointer;color:var(--text-dim);}
+  .tab.active{background:var(--text);color:#fff;border-color:var(--text);}
+  button.primary{
+    width:100%;background:var(--green);color:#fff;border:none;padding:12px;border-radius:3px;
+    font-family:var(--font-mono);font-weight:600;font-size:13px;cursor:pointer;margin-top:16px;
+  }
+  button.primary:hover{filter:brightness(1.08);}
+  button.ghost{
+    width:100%;background:none;color:var(--text-dim);border:1px solid var(--line);padding:9px;border-radius:3px;
+    font-family:var(--font-mono);font-size:11px;cursor:pointer;margin-top:8px;
+  }
+  button.ghost:hover{color:var(--text);border-color:var(--text-dim);}
+  #panelNote{font-size:11px;color:var(--text-dim);margin-top:14px;line-height:1.5;border-top:1px solid var(--line);padding-top:14px;}
+
+  /* ---------- MODALS ---------- */
+  .overlay{position:fixed;inset:0;background:rgba(20,24,22,.35);display:none;align-items:center;justify-content:center;z-index:100;}
+  .overlay.open{display:flex;}
+  .modal{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:26px;width:340px;box-shadow:0 12px 40px rgba(0,0,0,0.12);}
+  .modal h3{font-family:var(--font-display);margin:0 0 4px;font-size:17px;}
+  .modal p{font-size:12px;color:var(--text-dim);margin:0 0 16px;}
+  .modal .closeX{float:right;background:none;border:none;color:var(--text-dim);cursor:pointer;font-size:16px;}
+</style>
+</head>
+<body>
+
+<div id="topbar">
+  <div id="wordmark"><span class="dot"></span>100KSQUARES <span style="color:var(--text-dim);font-weight:400;font-size:11px;margin-left:4px;">/ TEST MODE</span></div>
+  <div id="searchWrap">
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#6c7570" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+    <input type="text" id="coordSearch" placeholder="Go to square e.g. 120,45">
+    <button id="searchGoBtn">Go</button>
+  </div>
+  <div id="stats">
+    <div>SQUARES SOLD <b id="statSold">0</b></div>
+    <div>RAISED <b class="green" id="statRaised">$0.00</b></div>
+    <div>HOTTEST <b id="statHot">—</b></div>
+    <div title="20% of platform profit, test mode — not a real donation yet">🐾 You've all donated <b style="color:var(--amber);" id="statFundraiser">$0.00</b> to WWF</div>
+  </div>
+</div>
+<div id="searchErr"></div>
+
+<div id="canvasWrap">
+  <canvas id="grid"></canvas>
+</div>
+<div id="hint">scroll to zoom · drag to pan · click a square</div>
+
+<div id="ticker"><div id="tickerTrack"></div></div>
+
+<!-- SIDE PANEL -->
+<div id="panel">
+  <div id="panelHead"><h2>Square <span id="panelCoord"></span></h2><button id="panelClose">✕</button></div>
+  <div id="panelBody">
+    <span class="status-pill" id="panelStatus">EMPTY</span>
+    <canvas id="preview" width="200" height="200"></canvas>
+    <div id="squareMessage"></div>
+    <div id="squareLink" style="display:none;margin-bottom:10px;">
+      <a id="squareLinkAnchor" href="#" target="_blank" rel="noopener" style="font-size:12px;color:var(--green);word-break:break-all;">🔗 <span id="squareLinkText"></span></a>
+    </div>
+    <div class="row"><span>Current price</span><b id="panelPrice">$0.10</b></div>
+    <div class="row"><span>Owner</span><b id="panelOwner">— unclaimed —</b></div>
+    <div id="countdownWrap" style="display:none;">
+      <div class="row" style="margin-bottom:0;"><span>Bidding closes in</span></div>
+      <div id="countdown">10:00</div>
+    </div>
+    <div id="buyForm">
+      <div style="font-family:var(--font-display);font-weight:700;font-size:13px;text-transform:uppercase;letter-spacing:.04em;color:var(--green);margin-top:16px;">Capture square</div>
+      <label class="small">Minimum price right now — this rises the closer bidding gets to closing, and changes again once it goes quiet</label>
+      <div class="row" style="font-size:16px;"><b id="minPrice">$0.10</b><span></span></div>
+      <div class="tabs">
+        <div class="tab active" data-mode="color">Color</div>
+        <div class="tab" data-mode="image">Image</div>
+      </div>
+      <div id="colorInput"><input type="color" id="colorPick" value="#2f9e44"></div>
+      <div id="imageInput" style="display:none;">
+        <input type="file" id="imgPick" accept="image/*" style="width:100%;font-size:11px;color:var(--text-dim);">
+      </div>
+      <label class="small">Message (optional — shows when someone clicks your square)</label>
+      <input type="text" id="messageInput" placeholder="say something..." maxlength="140">
+      <label class="small">Link (optional, where the square points to)</label>
+      <input type="text" id="linkInput" placeholder="https://">
+      <button class="primary" id="buyBtn">Pay &amp; claim square</button>
+      <button class="ghost" id="reportBtn">Report this square</button>
+    </div>
+    <div id="panelNote">Every purchase can be outbid within the active bidding window. If you're outbid, 80% of what you paid is refunded automatically. Once a square goes quiet, anyone can still take it — but only by paying double.</div>
+  </div>
+</div>
+
+<!-- PAYMENT MODAL (fake) -->
+<div class="overlay" id="payOverlay">
+  <div class="modal">
+    <button class="closeX" id="payClose">✕</button>
+    <h3>Confirm payment</h3>
+    <p>Test mode — no real card is charged.</p>
+    <div class="row"><span>Square</span><b id="payCoord"></b></div>
+    <div class="row"><span>Amount</span><b id="payAmount"></b></div>
+    <button class="primary" id="payConfirm">Pay $<span id="payAmount2"></span> (fake card)</button>
+  </div>
+</div>
+
+<!-- REPORT MODAL -->
+<div class="overlay" id="reportOverlay">
+  <div class="modal">
+    <button class="closeX" id="reportClose">✕</button>
+    <h3>Report square</h3>
+    <p>Tell us what's wrong. This goes straight to moderation — reported squares can be removed with no refund to the owner.</p>
+    <label class="small">Reason</label>
+    <input type="text" id="reportReason" placeholder="e.g. offensive image">
+    <button class="primary" id="reportSubmit">Submit report</button>
+  </div>
+</div>
+
+<script>
+/* =====================================================================
+   100KSQUARES — public site, live on Supabase
+   Grid: 500 x 200 = 100,000 squares
+   ===================================================================== */
+
+const COLS = 500, ROWS = 200, TOTAL = COLS*ROWS;
+const CELL = 12; // px per square at zoom 1
+
+// ---- state ----
+const squares = new Map(); // key "x,y" -> {status, price, stage, ownerLabel, color, image, link, message, endsAt}
+const imageCache = new Map(); // key -> HTMLImageElement (loaded)
+let selected = null;
+let camera = {x: COLS*CELL/2 - 500, y: ROWS*CELL/2 - 300, zoom: 1};
+let dragging = false, dragStart = {x:0,y:0}, camStart = {x:0,y:0};
+
+const STAGE_WINDOWS = [null, 600, 300, 60]; // seconds for stage 1,2,3
+const BID_MULT = 1.2;
+const REFUND_RATE = 0.8;
+const RESTING_MULT = 2.0;
+
+function key(x,y){ return x+','+y; }
+
+// ---- Supabase ----
+const SUPABASE_URL = 'https://mfosbqpjfkamqbvcytgb.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_Rq7Ns0FzsbpyTA8AzkhmXg_c2oAcz2f';
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+function rowToSquare(row){
+  return {
+    status: row.status,
+    stage: row.stage,
+    endsAt: row.ends_at ? new Date(row.ends_at).getTime() : null,
+    price: parseFloat(row.price),
+    ownerLabel: row.owner_label,
+    color: row.color,
+    image: row.image_url,
+    link: row.link,
+    message: row.message
+  };
+}
+
+function getImage(k, url){
+  if(!url) return null;
+  let img = imageCache.get(k);
+  if(img && img.src === url) return img.complete ? img : null;
+  img = new Image();
+  img.src = url;
+  img.onload = ()=> draw();
+  imageCache.set(k, img);
+  return null;
+}
+
+async function loadSquares(){
+  const { data, error } = await sb.from('squares').select('*');
+  if(error){ console.error(error); return; }
+  data.forEach(row => squares.set(key(row.x,row.y), rowToSquare(row)));
+  draw();
+  refreshStats();
+}
+
+function applyRealtimeRow(row, isOwnAction){
+  // guard against malformed/partial payloads (the root cause of the
+  // NaN/undefined bug) — never let bad data corrupt local state
+  if(!row || row.x==null || row.y==null || row.price==null) return;
+
+  const k = key(row.x, row.y);
+  const prev = squares.get(k);
+  squares.set(k, rowToSquare(row));
+  if(!isOwnAction){
+    if(prev){
+      logTicker(`Square (${row.x},${row.y}) sniped for $${parseFloat(row.price).toFixed(2)} — ${prev.ownerLabel} refunded $${(prev.price*REFUND_RATE).toFixed(2)} (80%)`);
+    } else {
+      logTicker(`Square (${row.x},${row.y}) claimed for $${parseFloat(row.price).toFixed(2)}`);
+    }
+  }
+  draw();
+  refreshStats();
+  refreshFundraiser();
+  if(selected && selected.x===row.x && selected.y===row.y) openPanel(row.x, row.y);
+}
+
+const selfActions = new Map(); // key -> timestamp, so our own realtime echo doesn't double-log
+
+sb.channel('squares-live')
+  .on('postgres_changes', { event: '*', schema: 'public', table: 'squares' }, payload => {
+    const k = payload.new ? key(payload.new.x, payload.new.y) : null;
+    const recentlySelf = k && selfActions.has(k) && (Date.now() - selfActions.get(k) < 5000);
+    applyRealtimeRow(payload.new, recentlySelf);
+  })
+  .subscribe();
+
+loadSquares();
+
+// ---- canvas setup ----
+const canvas = document.getElementById('grid');
+const ctx = canvas.getContext('2d');
+const wrap = document.getElementById('canvasWrap');
+
+function resize(){
+  canvas.width = wrap.clientWidth;
+  canvas.height = wrap.clientHeight;
+  draw();
+}
+window.addEventListener('resize', resize);
+
+function draw(){
+  ctx.fillStyle = '#f5f6f4';
+  ctx.fillRect(0,0,canvas.width,canvas.height);
+  const cell = CELL*camera.zoom;
+  const startCol = Math.max(0, Math.floor(camera.x/cell));
+  const startRow = Math.max(0, Math.floor(camera.y/cell));
+  const endCol = Math.min(COLS, startCol + Math.ceil(canvas.width/cell)+2);
+  const endRow = Math.min(ROWS, startRow + Math.ceil(canvas.height/cell)+2);
+
+  const now = Date.now();
+  const pulse = 0.5 + 0.5*Math.sin(now/350); // 0..1 oscillation for active-square pulse
+
+  for(let y=startRow;y<endRow;y++){
+    for(let x=startCol;x<endCol;x++){
+      const sx = x*cell - camera.x;
+      const sy = y*cell - camera.y;
+      const sq = squares.get(key(x,y));
+      const k = key(x,y);
+      if(sq){
+        if(sq.image){
+          const img = getImage(k, sq.image);
+          if(img){
+            ctx.drawImage(img, sx, sy, cell-1, cell-1);
+          } else {
+            ctx.fillStyle = '#dfe3e0';
+            ctx.fillRect(sx, sy, cell-1, cell-1);
+          }
+        } else {
+          ctx.fillStyle = sq.color || '#dfe3e0';
+          ctx.fillRect(sx, sy, cell-1, cell-1);
+        }
+
+        if(sq.status==='active'){
+          // strong, obviously-alive pulsing outline so an active bidding
+          // window is unmistakable at a glance, not just a thin static line
+          ctx.strokeStyle = `rgba(47,158,68,${0.5 + pulse*0.5})`;
+          ctx.lineWidth = 1.5 + pulse*1.5;
+          ctx.strokeRect(sx+0.75, sy+0.75, cell-2.5, cell-2.5);
+        } else if(sq.status==='resting'){
+          ctx.strokeStyle = 'rgba(200,121,10,0.55)';
+          ctx.lineWidth = 1;
+          ctx.strokeRect(sx+0.5, sy+0.5, cell-2, cell-2);
+        }
+
+        // countdown text directly on the square once zoomed in enough
+        if(sq.status==='active' && sq.endsAt && cell >= 34){
+          const remaining = Math.max(0, sq.endsAt - now);
+          const m = Math.floor(remaining/60000);
+          const s = Math.floor((remaining%60000)/1000);
+          ctx.fillStyle = 'rgba(0,0,0,0.55)';
+          ctx.fillRect(sx, sy+cell-14, cell-1, 14);
+          ctx.fillStyle = '#fff';
+          ctx.font = `${Math.min(11, cell*0.28)}px 'IBM Plex Mono', monospace`;
+          ctx.textAlign = 'center';
+          ctx.fillText(`${m}:${s.toString().padStart(2,'0')}`, sx+(cell-1)/2, sy+cell-4);
+        }
+
+        // handwritten-note feel: show the owner's message right on the
+        // square once you're zoomed in enough to read it, like a wall
+        // of little sticky notes rather than flat color tiles
+        if(sq.message && cell >= 60){
+          const bandH = Math.min(22, cell*0.32);
+          ctx.fillStyle = 'rgba(255,255,255,0.88)';
+          ctx.fillRect(sx, sy, cell-1, bandH);
+          ctx.fillStyle = '#14181a';
+          ctx.font = `${Math.min(11, cell*0.14)}px 'Space Grotesk', sans-serif`;
+          ctx.textAlign = 'center';
+          const maxChars = Math.floor((cell-8) / (cell*0.075));
+          const short = sq.message.length > maxChars ? sq.message.slice(0,maxChars-1)+'…' : sq.message;
+          ctx.fillText(short, sx+(cell-1)/2, sy+bandH*0.68);
+        }
+      } else {
+        ctx.fillStyle = '#eceeec';
+        ctx.fillRect(sx, sy, cell-1, cell-1);
+      }
+      if(selected && selected.x===x && selected.y===y){
+        ctx.strokeStyle = '#14181a';
+        ctx.lineWidth = 2;
+        ctx.strokeRect(sx+1, sy+1, cell-3, cell-3);
+      }
+    }
+  }
+}
+
+// redraw continuously while any square is active, so the pulse animates
+// and on-square countdowns tick even if nothing else changes
+setInterval(()=>{
+  draw();
+  if(selected) updateCountdownDisplay();
+}, 200);
+
+// ---- pan / zoom ----
+wrap.addEventListener('mousedown', e=>{
+  dragging = true; wrap.classList.add('dragging');
+  dragStart = {x:e.clientX, y:e.clientY};
+  camStart = {x:camera.x, y:camera.y};
+});
+window.addEventListener('mouseup', ()=>{ dragging=false; wrap.classList.remove('dragging'); });
+window.addEventListener('mousemove', e=>{
+  if(!dragging) return;
+  camera.x = camStart.x - (e.clientX-dragStart.x);
+  camera.y = camStart.y - (e.clientY-dragStart.y);
+  draw();
+});
+wrap.addEventListener('wheel', e=>{
+  e.preventDefault();
+  const zoomFactor = e.deltaY < 0 ? 1.1 : 0.9;
+  const newZoom = Math.min(8, Math.max(0.3, camera.zoom*zoomFactor));
+  const rect = wrap.getBoundingClientRect();
+  const mx = e.clientX-rect.left, my = e.clientY-rect.top;
+  const wx = (camera.x+mx)/camera.zoom, wy=(camera.y+my)/camera.zoom;
+  camera.zoom = newZoom;
+  camera.x = wx*camera.zoom - mx;
+  camera.y = wy*camera.zoom - my;
+  draw();
+}, {passive:false});
+
+let moved = false;
+wrap.addEventListener('mousedown', ()=> moved=false);
+wrap.addEventListener('mousemove', e=>{ if(dragging) moved=true; });
+wrap.addEventListener('click', e=>{
+  if(moved) return;
+  const rect = wrap.getBoundingClientRect();
+  const cell = CELL*camera.zoom;
+  const wx = camera.x + (e.clientX-rect.left);
+  const wy = camera.y + (e.clientY-rect.top);
+  const x = Math.floor(wx/cell), y = Math.floor(wy/cell);
+  if(x<0||y<0||x>=COLS||y>=ROWS) return;
+  openPanel(x,y);
+});
+
+// ---- coordinate search ----
+function goToSquare(x,y){
+  camera.zoom = 5;
+  const cell = CELL*camera.zoom;
+  camera.x = x*cell - wrap.clientWidth/2 + cell/2;
+  camera.y = y*cell - wrap.clientHeight/2 + cell/2;
+  draw();
+  openPanel(x,y);
+}
+function showSearchErr(msg){
+  const el = document.getElementById('searchErr');
+  el.textContent = msg;
+  el.style.display = 'block';
+  setTimeout(()=> el.style.display='none', 2500);
+}
+function runSearch(){
+  const raw = document.getElementById('coordSearch').value.trim();
+  const parts = raw.split(',').map(s=>s.trim()).filter(Boolean);
+  if(parts.length!==2){ showSearchErr('Enter coordinates like 120,45'); return; }
+  const x = parseInt(parts[0],10), y = parseInt(parts[1],10);
+  if(isNaN(x)||isNaN(y)){ showSearchErr('Coordinates must be numbers'); return; }
+  if(x<0||x>=COLS||y<0||y>=ROWS){ showSearchErr(`Out of range — x: 0-${COLS-1}, y: 0-${ROWS-1}`); return; }
+  goToSquare(x,y);
+}
+document.getElementById('searchGoBtn').onclick = runSearch;
+document.getElementById('coordSearch').addEventListener('keydown', e=>{ if(e.key==='Enter') runSearch(); });
+
+// ---- side panel ----
+const panel = document.getElementById('panel');
+function openPanel(x,y){
+  selected = {x,y};
+  draw();
+  panel.classList.add('open');
+  document.getElementById('panelCoord').textContent = `(${x}, ${y})`;
+  const sq = squares.get(key(x,y));
+  const statusEl = document.getElementById('panelStatus');
+  const priceEl = document.getElementById('panelPrice');
+  const ownerEl = document.getElementById('panelOwner');
+  const minPriceEl = document.getElementById('minPrice');
+  const cdWrap = document.getElementById('countdownWrap');
+  const msgEl = document.getElementById('squareMessage');
+  const linkWrap = document.getElementById('squareLink');
+  const linkAnchor = document.getElementById('squareLinkAnchor');
+  const linkText = document.getElementById('squareLinkText');
+
+  if(!sq){
+    statusEl.textContent='EMPTY'; statusEl.className='status-pill pill-empty';
+    priceEl.textContent='$0.10';
+    ownerEl.textContent='— unclaimed —';
+    minPriceEl.textContent='$0.10';
+    cdWrap.style.display='none';
+    msgEl.style.display='none';
+    linkWrap.style.display='none';
+  } else {
+    if(sq.status==='active'){ statusEl.textContent='ACTIVE BIDDING'; statusEl.className='status-pill pill-active'; cdWrap.style.display='block'; }
+    else { statusEl.textContent='RESTING'; statusEl.className='status-pill pill-resting'; cdWrap.style.display='none'; }
+    priceEl.textContent = '$'+sq.price.toFixed(2);
+    ownerEl.textContent = sq.ownerLabel;
+    // minimum price depends on where we are in the bidding timeline:
+    // active -> 1.2x current bid; resting (timer expired, no more bids) -> 2x
+    const mult = sq.status==='active' ? BID_MULT : RESTING_MULT;
+    minPriceEl.textContent = '$'+(sq.price*mult).toFixed(2);
+    if(sq.message){ msgEl.style.display='block'; msgEl.textContent = '💬 '+sq.message; }
+    else { msgEl.style.display='none'; }
+    if(sq.link){
+      linkWrap.style.display='block';
+      const href = /^https?:\/\//i.test(sq.link) ? sq.link : 'https://'+sq.link;
+      linkAnchor.href = href;
+      linkText.textContent = sq.link;
+    } else {
+      linkWrap.style.display='none';
+    }
+  }
+  drawPreview(sq);
+  updateCountdownDisplay();
+}
+document.getElementById('panelClose').onclick = ()=>{ panel.classList.remove('open'); selected=null; draw(); };
+
+function drawPreview(sq){
+  const pctx = document.getElementById('preview').getContext('2d');
+  pctx.clearRect(0,0,200,200);
+  if(sq && sq.image){
+    const img = new Image();
+    img.onload = ()=> pctx.drawImage(img,0,0,200,200);
+    img.src = sq.image;
+  } else {
+    pctx.fillStyle = sq ? (sq.color||'#f0f2ef') : '#f0f2ef';
+    pctx.fillRect(0,0,200,200);
+  }
+}
+
+document.querySelectorAll('.tab').forEach(t=>{
+  t.onclick = ()=>{
+    document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));
+    t.classList.add('active');
+    const mode = t.dataset.mode;
+    document.getElementById('colorInput').style.display = mode==='color' ? 'block':'none';
+    document.getElementById('imageInput').style.display = mode==='image' ? 'block':'none';
+  };
+});
+
+function updateCountdownDisplay(){
+  if(!selected) return;
+  const sq = squares.get(key(selected.x, selected.y));
+  const el = document.getElementById('countdown');
+  if(!sq || sq.status!=='active'){ return; }
+  const remaining = Math.max(0, sq.endsAt - Date.now());
+  const m = Math.floor(remaining/60000);
+  const s = Math.floor((remaining%60000)/1000);
+  el.textContent = `${m}:${s.toString().padStart(2,'0')}`;
+  el.classList.toggle('urgent', remaining < 15000);
+}
+
+// a rough per-browser identity for test mode
+function getBuyerLabel(){
+  let id = localStorage.getItem('buyer_label');
+  if(!id){
+    id = 'buyer_' + Math.random().toString(36).slice(2,8);
+    localStorage.setItem('buyer_label', id);
+  }
+  return id;
+}
+
+// ---- buy flow ----
+document.getElementById('buyBtn').onclick = ()=>{
+  if(!selected) return;
+  const sq = squares.get(key(selected.x, selected.y));
+  const price = sq ? sq.price * (sq.status==='active'?BID_MULT:RESTING_MULT) : 0.10;
+  document.getElementById('payCoord').textContent = `(${selected.x}, ${selected.y})`;
+  document.getElementById('payAmount').textContent = '$'+price.toFixed(2);
+  document.getElementById('payAmount2').textContent = price.toFixed(2);
+  document.getElementById('payOverlay').classList.add('open');
+};
+document.getElementById('payClose').onclick = ()=> document.getElementById('payOverlay').classList.remove('open');
+
+document.getElementById('payConfirm').onclick = async ()=>{
+  const {x,y} = selected;
+  const colorMode = document.querySelector('.tab.active').dataset.mode === 'color';
+  const color = document.getElementById('colorPick').value;
+  const fileInput = document.getElementById('imgPick');
+  const link = document.getElementById('linkInput').value;
+  const message = document.getElementById('messageInput').value;
+  const prev = squares.get(key(x,y));
+  const mult = prev ? (prev.status==='active'?BID_MULT:RESTING_MULT) : 1;
+  const newPrice = prev ? +(prev.price*mult).toFixed(2) : 0.10;
+
+  const btn = document.getElementById('payConfirm');
+  btn.disabled = true; btn.textContent = 'Processing...';
+
+  async function commit(imageData){
+    const { data, error } = await sb.rpc('place_bid', {
+      p_x: x, p_y: y, p_new_price: newPrice,
+      p_buyer_label: getBuyerLabel(),
+      p_color: colorMode ? color : null,
+      p_image_url: colorMode ? null : imageData,
+      p_link: link || null,
+      p_message: message || null
+    });
+
+    btn.disabled = false; btn.textContent = 'Pay & claim square';
+
+    if(error){
+      alert('Could not complete purchase: ' + error.message);
+      return;
+    }
+
+    // apply our own result immediately — don't wait on the realtime
+    // websocket round-trip, and mark it so the later echo doesn't
+    // double-log the ticker
+    selfActions.set(key(x,y), Date.now());
+    const wasOwned = squares.has(key(x,y));
+    squares.set(key(x,y), rowToSquare(data[0]));
+    logTicker(wasOwned
+      ? `Square (${x},${y}) sniped for $${newPrice.toFixed(2)}`
+      : `Square (${x},${y}) claimed for $${newPrice.toFixed(2)}`);
+    draw();
+    refreshStats();
+    refreshFundraiser();
+    openPanel(x,y);
+
+    document.getElementById('payOverlay').classList.remove('open');
+  }
+
+  if(!colorMode && fileInput.files[0]){
+    const reader = new FileReader();
+    reader.onload = e => commit(e.target.result);
+    reader.readAsDataURL(fileInput.files[0]);
+  } else {
+    commit(null);
+  }
+};
+
+// ---- report flow ----
+document.getElementById('reportBtn').onclick = ()=>{
+  document.getElementById('reportOverlay').classList.add('open');
+};
+document.getElementById('reportClose').onclick = ()=> document.getElementById('reportOverlay').classList.remove('open');
+document.getElementById('reportSubmit').onclick = async ()=>{
+  const reason = document.getElementById('reportReason').value || '(no reason given)';
+  const { error } = await sb.from('reports').insert({ x:selected.x, y:selected.y, reason });
+  document.getElementById('reportOverlay').classList.remove('open');
+  document.getElementById('reportReason').value='';
+  if(error){ alert('Could not submit report: ' + error.message); return; }
+  alert('Reported. This is now in the moderation dashboard.');
+};
+
+// ---- ticker ----
+const tickerLog = [];
+function logTicker(msg){
+  tickerLog.unshift(msg);
+  if(tickerLog.length>20) tickerLog.pop();
+  renderTicker();
+}
+function renderTicker(){
+  const track = document.getElementById('tickerTrack');
+  if(tickerLog.length===0){
+    track.innerHTML = '<span>Waiting for the first square to sell...</span>';
+    return;
+  }
+  track.innerHTML = tickerLog.map(m=>`<span>${m}</span>`).join('');
+}
+renderTicker();
+
+// ---- stats ----
+function refreshStats(){
+  let sold=0, raised=0, hot=null, hotPrice=0;
+  squares.forEach((sq,k)=>{
+    sold++;
+    raised += sq.price;
+    if(sq.price>hotPrice){ hotPrice=sq.price; hot=k; }
+  });
+  document.getElementById('statSold').textContent = sold.toLocaleString();
+  document.getElementById('statRaised').textContent = '$'+raised.toFixed(2);
+  document.getElementById('statHot').textContent = hot ? `(${hot}) $${hotPrice.toFixed(2)}` : '—';
+}
+refreshStats();
+
+resize();
+
+async function refreshFundraiser(){
+  const { data, error } = await sb.from('fundraiser_public_stats').select('*').single();
+  if(error || !data) return;
+  document.getElementById('statFundraiser').textContent = '$'+parseFloat(data.total_fundraiser).toFixed(2);
+}
+refreshFundraiser();
+</script>
+</body>
+</html>
